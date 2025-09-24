@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "253213775944",
+    "firebase_url": "https://gestionfournitures-2e8db-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "gestionfournitures-2e8db",
+    "storage_bucket": "gestionfournitures-2e8db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:253213775944:android:5d73843dc3a72bdcb7607d",
+        "android_client_info": {
+          "package_name": "com.example.gestion_fournitures"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPd1iE9yuMELVs1d5AB9ZXKdEOnxhJ5e8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:253213775944:android:1dddf9353e0e09deb7607d",
+        "android_client_info": {
+          "package_name": "com.web82orta.gestionfourniture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPd1iE9yuMELVs1d5AB9ZXKdEOnxhJ5e8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
