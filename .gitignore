@@ -32,7 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-firebase_options
+firebase_options.dart
 
 # Symbolication related
 app.*.symbols
