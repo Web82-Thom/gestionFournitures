@@ -73,64 +73,77 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(_isLogin ? 'Connexion' : 'Inscription')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) => value!.contains('@') ? null : 'Email invalide',
-              ),
-              if (!_isLogin)
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                SizedBox(height: 20),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: AssetImage('assets/images/logoMyCookieFactory.jpg'),
+                ),
+                SizedBox(height: 20),
                 TextFormField(
-                  controller: _nicknameController,
-                  decoration: InputDecoration(labelText: 'Surnom'),
-                  validator: (value) => value!.isEmpty ? 'Champ requis' : null,
+                  controller: _emailController,
+                  decoration: InputDecoration(labelText: 'Email'),
+                  validator: (value) => value!.contains('@') ? null : 'Email invalide',
                 ),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscureText,
-                decoration: InputDecoration(
-                  labelText: 'Mot de passe',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscureText ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setState(() => _obscureText = !_obscureText),
+                if (!_isLogin)
+                  TextFormField(
+                    controller: _nicknameController,
+                    decoration: InputDecoration(labelText: 'Surnom'),
+                    validator: (value) => value!.isEmpty ? 'Champ requis' : null,
                   ),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscureText,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                          _obscureText ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () => setState(() => _obscureText = !_obscureText),
+                    ),
+                  ),
+                  validator: (value) => value!.length >= 6 ? null : 'Minimum 6 caractères',
                 ),
-                validator: (value) => value!.length >= 6 ? null : 'Minimum 6 caractères',
-              ),
-              // if (!_isLogin)
-              //   Column(
-              //     children: [
-              //       SizedBox(height: 10),
-              //       _image == null
-              //           ? Text('Aucune image sélectionnée')
-              //           : Image.file(_image!, height: 100),
-              //       ElevatedButton(
-              //         onPressed: _pickImage,
-              //         child: Text('Sélectionner une photo'),
-              //       ),
-              //     ],
-              //   ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submit,
-                child: Text(_isLogin ? 'Connexion' : 'Inscription'),
-              ),
-              if (_isLogin)
+                // if (!_isLogin)
+                //   Column(
+                //     children: [
+                //       SizedBox(height: 10),
+                //       _image == null
+                //           ? Text('Aucune image sélectionnée')
+                //           : Image.file(_image!, height: 100),
+                //       ElevatedButton(
+                //         onPressed: _pickImage,
+                //         child: Text('Sélectionner une photo'),
+                //       ),
+                //     ],
+                //   ),
+                SizedBox(height: 20),
                 ElevatedButton(
-                onPressed: _resetPassword,
-                child: Text( 'Mot de passe oublié ?'),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _isLogin = !_isLogin),
-                child: Text(_isLogin ? 'Créer un compte' : 'Se connecter'),
-              )
-            ],
+                  onPressed: _submit,
+                  child: Text(_isLogin ? 'Connexion' : 'Inscription'),
+                ),
+                if (_isLogin)
+                  ElevatedButton(
+                  onPressed: _resetPassword,
+                  child: Text( 'Mot de passe oublié ?'),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _isLogin = !_isLogin),
+                  child: Text(_isLogin ? 'Créer un compte' : 'Se connecter'),
+                ),
+                SizedBox(height: 80),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: AssetImage('assets/images/logoMyCookieFactory.jpg'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
