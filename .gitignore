@@ -32,8 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-firebase_options.dart
-firebase_options
+.firebase_options.dart
+.firebase_options
 
 # Symbolication related
 app.*.symbols
