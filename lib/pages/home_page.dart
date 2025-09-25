@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/pages/chiffre_affaire.dart';
 import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -53,7 +54,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ChiffreAffairePage()));
             },
             child: Center(
               child: Column(
