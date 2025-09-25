@@ -37,6 +37,7 @@ dependencies:
   firebase_storage: ^13.0.2
   cloud_firestore: ^6.0.2
   fl_chart: ^1.1.1
+  editable: ^2.0.0
 
 dev_dependencies:
   flutter_test:

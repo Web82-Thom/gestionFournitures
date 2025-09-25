@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/pages/la_boutique.dart';
+import 'package:gestion_fournitures/pages/stands_page.dart';
 import 'package:gestion_fournitures/pages/chiffre_affaire.dart';
 import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 
@@ -75,7 +77,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => StandsPage()));
             },
             child: Center(
               child: Column(
@@ -83,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.storefront_outlined, size: 70, color: Colors.deepPurple),
                   Text(
-                    'Fournitures des stands', 
+                    'Les stands', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
@@ -96,7 +98,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => LaBoutiquePage()));
             },
             child: Center(
               child: Column(
@@ -104,7 +106,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.store_mall_directory_rounded, size: 70, color: Colors.deepPurple),
                   Text(
-                    'Stock des boutiques', 
+                    'La boutique', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
