@@ -48,9 +48,88 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: Center(
-        child: Text('Bienvenue sur la page d\'accueil!'),
-      ),
+      body: GridView.count(crossAxisCount: 2, children: [
+        Card(
+          margin: EdgeInsets.all(20),
+          child: InkWell(
+            onTap: () {
+              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+            },
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.monetization_on_outlined , size: 70, color: Colors.deepPurple),
+                  Text(
+                    'Chiffre d\'affaire', 
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Card(
+          margin: EdgeInsets.all(20),
+          child: InkWell(
+            onTap: () {
+              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+            },
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.storefront_outlined, size: 70, color: Colors.deepPurple),
+                  Text(
+                    'Fournitures des stands', 
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Card(
+          margin: EdgeInsets.all(20),
+          child: InkWell(
+            onTap: () {
+              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+            },
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.store_mall_directory_rounded, size: 70, color: Colors.deepPurple),
+                  Text(
+                    'Stock des boutiques', 
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Card(
+          margin: EdgeInsets.all(20),
+          child: InkWell(
+            onTap: () {
+              // Navigator.push(context, MaterialPageRoute(builder: (context) => SomePage()));
+            },
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_edu_sharp, size: 70, color: Colors.deepPurple),
+                  Text('Historique', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }
