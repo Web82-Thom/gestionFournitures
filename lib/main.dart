@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/home_page.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
+import 'firebase_options.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 
