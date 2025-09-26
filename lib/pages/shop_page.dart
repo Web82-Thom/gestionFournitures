@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/pages/la_boutique_page.dart';
-import 'stand_detail_page.dart';
 
 class ShopsPage extends StatelessWidget {
   const ShopsPage({Key? key}) : super(key: key);

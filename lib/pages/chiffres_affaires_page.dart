@@ -9,7 +9,7 @@ class ChiffresAffairesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CollectionReference standsCollection = FirebaseFirestore.instance.collection('stands');
-    final CollectionReference shopCollection = FirebaseFirestore.instance.collection('boutiques');
+    // final CollectionReference shopCollection = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(

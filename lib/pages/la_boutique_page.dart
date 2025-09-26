@@ -32,71 +32,6 @@ class LaBoutiquePageState extends State<LaBoutiquePage> {
     for (var c in _consoControllers) c.dispose();
     super.dispose();
   }
-
-  Future<void> _addProduct() async {
-    final produitsController = TextEditingController();
-    final quantiteController = TextEditingController();
-    final consommerController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Ajouter un produit"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: produitsController,
-              decoration: const InputDecoration(labelText: "Nom du produit"),
-            ),
-            TextField(
-              controller: quantiteController,
-              decoration: const InputDecoration(labelText: "Quantité"),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: consommerController,
-              decoration: const InputDecoration(labelText: "Consommé"),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final produit = produitsController.text.trim();
-              final quantite = int.tryParse(quantiteController.text) ?? 0;
-              final consommer = int.tryParse(consommerController.text) ?? 0;
-              if (produit.isNotEmpty) {
-                final newProduct = ShopModel(
-                  id: '',
-                  produits: produit,
-                  quantite: quantite,
-                  consommer: consommer,
-                  reste: quantite - consommer,
-                  commande: (quantite - consommer) < 10 ? "⚠️" : "✅",
-                );
-                await stockRef
-                    .doc(widget.shopId)
-                    .collection('stockToulouse')
-                    .add(newProduct.toMap());
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Produit ajouté ✅")),
-                );
-              }
-            },
-            child: const Text("Ajouter"),
-          ),
-        ],
-      ),
-    );
-  }
   /// Supprimer un produit avec confirmation
   void _confirmDelete(String productId) {
     showDialog(
@@ -159,14 +94,14 @@ class LaBoutiquePageState extends State<LaBoutiquePage> {
       });
     });
   }
-  void _updateControllers() {
-    _quantiteControllers = listStock
-        .map((p) => TextEditingController(text: p.quantite.toString()))
-        .toList();
-    _consoControllers = listStock
-        .map((p) => TextEditingController(text: p.consommer.toString()))
-        .toList();
-  }
+  // void _updateControllers() {
+  //   _quantiteControllers = listStock
+  //       .map((p) => TextEditingController(text: p.quantite.toString()))
+  //       .toList();
+  //   _consoControllers = listStock
+  //       .map((p) => TextEditingController(text: p.consommer.toString()))
+  //       .toList();
+  // }
 
   /// Modifier le nom du produit
   void modifierNomProduit(int index) {
