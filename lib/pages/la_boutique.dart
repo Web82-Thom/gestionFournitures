@@ -91,6 +91,58 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
     _collection.doc(docId).update({key: parsedValue});
   }
 
+  void modifierNomProduit(int index) {
+    final controller = TextEditingController(text: _rows[index].produits);
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Modifier le produit"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: "Nom du produit"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                try {
+                  // Mise à jour Firebase
+                  final docId = _rows[index]
+                      .id; // Assure-toi que ShopStockModel a bien un champ 'id'
+                  await FirebaseFirestore.instance
+                      .collection('boutique')
+                      .doc(docId)
+                      .update({'produits': newName});
+
+                  // Mise à jour locale
+                  setState(() {
+                    _rows[index].produits = newName;
+                  });
+
+                  Navigator.of(context).pop(); // Ferme le dialogue
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Produit modifié ✅")),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Erreur : $e")));
+                }
+              }
+            },
+            child: const Text("Modifier"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _subscription.cancel();
@@ -199,7 +251,7 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
                               Expanded(
                                 flex: 2,
                                 child: Text(
-                                  'Prdt',
+                                  'Produits',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white,
@@ -277,9 +329,12 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
                                     children: [
                                       Expanded(
                                         flex: 2,
-                                        child: Text(
-                                          row.produits,
-                                          textAlign: TextAlign.center,
+                                        child: InkWell(
+                                          onDoubleTap: () => modifierNomProduit(index),
+                                          child: Text(
+                                            row.produits,
+                                            textAlign: TextAlign.center,
+                                          ),
                                         ),
                                       ),
                                       Expanded(

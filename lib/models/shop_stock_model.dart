@@ -3,12 +3,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ShopStockModel {
-  String id;            // ID du document Firestore
-  String produits;      // Nom du produit
-  int quantite;         // Quantité en stock
-  int consommer;        // Quantité consommée
-  int reste;            // Calculé automatiquement
-  String commande;      // Calculé automatiquement ⚠️ ou ✅
+  String id;
+  String produits;
+  int quantite;
+  int consommer;
+  int reste;
+  String commande;
 
   ShopStockModel({
     required this.id,
@@ -75,6 +75,54 @@ class ShopStockModel {
       consommer: newConso,
       reste: newReste,
       commande: newReste < 10 ? '⚠️' : '✅',
+    );
+  }
+  /// Crée à partir d'une Map (sécurise types et conversions)
+  factory ShopStockModel.fromMap(String id, Map<String, dynamic>? data) {
+    final map = data ?? <String, dynamic>{};
+    final produits = (map['produits'] ?? '').toString();
+    final quantite = int.tryParse(map['quantite']?.toString() ?? '') ?? 0;
+    final consommer = int.tryParse(map['consommer']?.toString() ?? '') ?? 0;
+    final reste = quantite - consommer;
+    final commande = reste < 10 ? '⚠️' : '✅';
+
+    return ShopStockModel(
+      id: id,
+      produits: produits,
+      quantite: quantite,
+      consommer: consommer,
+      reste: reste,
+      commande: commande,
+    );
+  }
+  
+
+  Map<String, dynamic> toFirestore() {
+    final resteCalc = quantite - consommer;
+    return {
+      'produits': produits,
+      'quantite': quantite,
+      'consommer': consommer,
+      'reste': resteCalc,
+      'commande': resteCalc < 10 ? "⚠️" : "✅",
+    };
+  }
+
+  /// Crée un produit à partir d'un DocumentSnapshot
+  factory ShopStockModel.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    final quantite = int.tryParse(data['quantite']?.toString() ?? '') ?? 0;
+    final consommer = int.tryParse(data['consommer']?.toString() ?? '') ?? 0;
+    final reste = quantite - consommer;
+    final commande = reste < 10 ? "⚠️" : "✅";
+
+    return ShopStockModel(
+      id: doc.id,
+      produits: data['produits'] ?? '',
+      quantite: quantite,
+      consommer: consommer,
+      reste: reste,
+      commande: commande,
     );
   }
 }
