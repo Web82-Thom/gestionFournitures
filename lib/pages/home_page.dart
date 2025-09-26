@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gestion_fournitures/pages/la_boutique.dart';
+import 'package:gestion_fournitures/pages/shop_page.dart';
 import 'package:gestion_fournitures/pages/stands_page.dart';
-import 'package:gestion_fournitures/pages/chiffre_affaire.dart';
+import 'package:gestion_fournitures/pages/chiffres_affaires_page.dart';
 import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ChiffreAffairePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ChiffresAffairesPage()));
             },
             child: Center(
               child: Column(
@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => LaBoutiquePage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ShopsPage()));
             },
             child: Center(
               child: Column(
@@ -106,7 +106,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.store_mall_directory_rounded, size: 70, color: Colors.deepPurple),
                   Text(
-                    'Stock de la boutique', 
+                    'Stock des boutiques', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
