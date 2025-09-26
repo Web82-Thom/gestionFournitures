@@ -186,7 +186,9 @@ class _StandDetailPageState extends State<StandDetailPage> {
             _products = snapshot.data!.docs
                 .map((doc) => ShopStockModel.fromDocument(doc))
                 .toList();
+            _products.sort((a, b) => a.produits.toLowerCase().compareTo(b.produits.toLowerCase()));
             _updateControllers();
+            
 
             return LayoutBuilder(
               builder: (context, constraints) {

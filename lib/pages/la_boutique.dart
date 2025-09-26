@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/shop_stock_model.dart';
-import 'dart:async';
 
 class LaBoutiquePage extends StatefulWidget {
   const LaBoutiquePage({super.key});
@@ -11,89 +10,15 @@ class LaBoutiquePage extends StatefulWidget {
 }
 
 class _LaBoutiquePageState extends State<LaBoutiquePage> {
-  final CollectionReference _collection = FirebaseFirestore.instance.collection(
-    'boutique',
-  );
+  final CollectionReference _collection =
+      FirebaseFirestore.instance.collection('boutique');
 
-  List<ShopStockModel> _rows = [];
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
 
-  late final StreamSubscription _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _subscription = _collection.snapshots().listen((snapshot) {
-      if (!mounted) return;
-
-      final newRows = snapshot.docs
-          .map((doc) => ShopStockModel.fromFirestore(doc))
-          .toList();
-
-      // Mettre à jour les controllers existants sans les recréer
-      for (int i = 0; i < newRows.length; i++) {
-        if (i < _quantiteControllers.length) {
-          _quantiteControllers[i].text = newRows[i].quantite.toString();
-          _consoControllers[i].text = newRows[i].consommer.toString();
-        } else {
-          _quantiteControllers.add(
-            TextEditingController(text: newRows[i].quantite.toString()),
-          );
-          _consoControllers.add(
-            TextEditingController(text: newRows[i].consommer.toString()),
-          );
-        }
-      }
-
-      _rows = newRows;
-      setState(() {});
-    });
-  }
-
-  void _confirmDelete(int index) async {
-    final row = _rows[index];
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirmer la suppression"),
-        content: Text(
-          "Voulez-vous vraiment supprimer le produit '${row.produits}' ?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Supprimer"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      _collection.doc(row.id).delete();
-    }
-  }
-
-  void _updateCell(int index, String key, String value) {
-    int parsedValue = int.tryParse(value) ?? 0;
-
-    if (parsedValue < 0) parsedValue = 0;
-    if (key == 'consommer' && parsedValue > _rows[index].quantite) {
-      parsedValue = _rows[index].quantite;
-    }
-
-    final docId = _rows[index].id;
-    _collection.doc(docId).update({key: parsedValue});
-  }
-
-  void modifierNomProduit(int index) {
-    final controller = TextEditingController(text: _rows[index].produits);
-
+  /// Ouvre une boîte de dialogue pour modifier le nom du produit
+  void modifierNomProduit(ShopStockModel row) {
+    final controller = TextEditingController(text: row.produits);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -103,37 +28,16 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
           decoration: const InputDecoration(labelText: "Nom du produit"),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Annuler"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
           ElevatedButton(
             onPressed: () async {
               final newName = controller.text.trim();
               if (newName.isNotEmpty) {
-                try {
-                  // Mise à jour Firebase
-                  final docId = _rows[index]
-                      .id; // Assure-toi que ShopStockModel a bien un champ 'id'
-                  await FirebaseFirestore.instance
-                      .collection('boutique')
-                      .doc(docId)
-                      .update({'produits': newName});
-
-                  // Mise à jour locale
-                  setState(() {
-                    _rows[index].produits = newName;
-                  });
-
-                  Navigator.of(context).pop(); // Ferme le dialogue
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Produit modifié ✅")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text("Erreur : $e")));
-                }
+                await _collection.doc(row.id).update({'produits': newName});
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Produit modifié ✅")),
+                );
               }
             },
             child: const Text("Modifier"),
@@ -143,68 +47,69 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
     );
   }
 
-  @override
-  void dispose() {
-    _subscription.cancel();
-    _quantiteControllers.forEach((c) => c.dispose());
-    _consoControllers.forEach((c) => c.dispose());
-    super.dispose();
+  void _confirmDelete(ShopStockModel row) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Confirmer la suppression"),
+        content: Text("Voulez-vous vraiment supprimer le produit '${row.produits}' ?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Supprimer")),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _collection.doc(row.id).delete();
+    }
+  }
+
+  void _updateCell(ShopStockModel row, String key, String value) {
+    int parsedValue = int.tryParse(value) ?? 0;
+    if (parsedValue < 0) parsedValue = 0;
+    if (key == 'consommer' && parsedValue > row.quantite) parsedValue = row.quantite;
+    _collection.doc(row.id).update({key: parsedValue});
   }
 
   /// Ouvre une boîte de dialogue pour ajouter un nouveau produit
   void _addProductDialog() {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController quantController = TextEditingController();
-    final TextEditingController consoController = TextEditingController();
+    final nameController = TextEditingController();
+    final quantController = TextEditingController();
+    final consoController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Ajouter un produit"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Nom du produit"),
-              ),
-              TextField(
-                controller: quantController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Quantité"),
-              ),
-              TextField(
-                controller: consoController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Consommé"),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Annuler"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                String name = nameController.text.trim();
-                int quant = int.tryParse(quantController.text) ?? 0;
-                int conso = int.tryParse(consoController.text) ?? 0;
-                if (name.isNotEmpty) {
-                  _collection.add({
-                    "produits": name,
-                    "quantite": quant,
-                    "consommer": conso,
-                  });
-                }
-                Navigator.pop(context);
-              },
-              child: const Text("Ajouter"),
-            ),
+      builder: (_) => AlertDialog(
+        title: const Text("Ajouter un produit"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nom du produit")),
+            TextField(controller: quantController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Quantité")),
+            TextField(controller: consoController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Consommé")),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              final quant = int.tryParse(quantController.text) ?? 0;
+              final conso = int.tryParse(consoController.text) ?? 0;
+              if (name.isNotEmpty) {
+                _collection.add({
+                  'produits': name,
+                  'quantite': quant,
+                  'consommer': conso,
+                });
+              }
+              Navigator.pop(context);
+            },
+            child: const Text("Ajouter"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -213,14 +118,10 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("La Boutique - Stock"),
-        backgroundColor: Colors.blueAccent,
         centerTitle: true,
+        backgroundColor: Colors.blueAccent,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addProductDialog,
-            tooltip: "Ajouter un produit",
-          ),
+          IconButton(icon: const Icon(Icons.add), onPressed: _addProductDialog, tooltip: "Ajouter un produit"),
         ],
       ),
       body: Padding(
@@ -228,165 +129,109 @@ class _LaBoutiquePageState extends State<LaBoutiquePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "📦 Stock Boutique",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
-              ),
-            ),
+            const Text("📦 Stock Boutique", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
             const SizedBox(height: 12),
             Expanded(
-              child: _rows.isEmpty
-                  ? const Center(child: Text("Aucun produit"))
-                  : Column(
-                      children: [
-                        // Header
-                        Container(
-                          color: Colors.blueAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            children: const [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Produits',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Qté stock',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Conso',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  'Reste',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  'Cmd',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Lignes
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _rows.length,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _collection.snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) return Center(child: Text("Erreur: ${snapshot.error}"));
+                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-                            // Remplace l'itemBuilder dans le ListView.builder :
-                            itemBuilder: (context, index) {
-                              final row = _rows[index];
-                              final isEven = index % 2 == 0;
+                  // Convertir en modèle et trier alphabétiquement
+                  final rows = snapshot.data!.docs
+                      .map((doc) => ShopStockModel.fromFirestore(doc))
+                      .toList()
+                    ..sort((a, b) => a.produits.toLowerCase().compareTo(b.produits.toLowerCase()));
 
-                              return InkWell(
-                                onLongPress: () => _confirmDelete(index),
-                                child: Container(
-                                  color: isEven
-                                      ? Colors.blue.shade50
-                                      : Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 6,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 2,
-                                        child: InkWell(
-                                          onDoubleTap: () => modifierNomProduit(index),
-                                          child: Text(
-                                            row.produits,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: TextField(
-                                          controller:
-                                              _quantiteControllers[index],
-                                          keyboardType: TextInputType.number,
-                                          textAlign: TextAlign.center,
-                                          onChanged: (value) => _updateCell(
-                                            index,
-                                            'quantite',
-                                            value,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: TextField(
-                                          controller: _consoControllers[index],
-                                          keyboardType: TextInputType.number,
-                                          textAlign: TextAlign.center,
-                                          onChanged: (value) => _updateCell(
-                                            index,
-                                            'consommer',
-                                            value,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Text(
-                                          row.reste.toString(),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Text(
-                                          row.commande,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                  // Créer les controllers
+                  _quantiteControllers = rows.map((r) => TextEditingController(text: r.quantite.toString())).toList();
+                  _consoControllers = rows.map((r) => TextEditingController(text: r.consommer.toString())).toList();
+
+                  return Column(
+                    children: [
+                      // Header
+                      Container(
+                        color: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: const [
+                            Expanded(flex: 2, child: Text('Produits', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            Expanded(flex: 2, child: Text('Qté stock', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            Expanded(flex: 2, child: Text('Conso', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            Expanded(flex: 1, child: Text('Reste', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            Expanded(flex: 1, child: Text('Cmd', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      // Lignes
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: rows.length,
+                          itemBuilder: (context, index) {
+                            final row = rows[index];
+                            final isEven = index % 2 == 0;
+                            final reste = row.quantite - row.consommer;
+                            final commande = reste < 10 ? "⚠️" : "✅";
+
+                            return InkWell(
+                              onLongPress: () => _confirmDelete(row),
+                              child: Container(
+                                color: isEven ? Colors.blue.shade50 : Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: InkWell(
+                                        onDoubleTap: () => modifierNomProduit(row),
+                                        child: Text(row.produits, textAlign: TextAlign.center),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextField(
+                                        controller: _quantiteControllers[index],
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.center,
+                                        onChanged: (value) => _updateCell(row, 'quantite', value),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextField(
+                                        controller: _consoControllers[index],
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.center,
+                                        onChanged: (value) => _updateCell(row, 'consommer', value),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Text(reste.toString(), textAlign: TextAlign.center),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        commande,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: reste < 10 ? Colors.red : Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),

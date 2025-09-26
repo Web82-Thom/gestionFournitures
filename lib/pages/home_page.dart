@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.monetization_on_outlined , size: 70, color: Colors.deepPurple),
                   Text(
-                    'Chiffre d\'affaire', 
+                    'Chiffres d\'affaires', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.storefront_outlined, size: 70, color: Colors.deepPurple),
                   Text(
-                    'Les stands', 
+                    'Stock des stands', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
@@ -106,7 +106,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(Icons.store_mall_directory_rounded, size: 70, color: Colors.deepPurple),
                   Text(
-                    'La boutique', 
+                    'Stock de la boutique', 
                     style: TextStyle(fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.history_edu_sharp, size: 70, color: Colors.deepPurple),
-                  Text('Historique', style: TextStyle(fontSize: 16)),
+                  Text('Historiques', style: TextStyle(fontSize: 16)),
                 ],
               ),
             ),
