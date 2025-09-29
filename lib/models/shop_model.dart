@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Modèle pour un produit du stock
-class ShopModel {
+class ShopStandModel {
   String id;
   String produits;
   int quantite;
   int consommer;
   int reste;
   String commande;
-  String standId; // id du stand si ce produit appartient à un stand
+  String standId; // id du stand ou boutique si ce produit appartient à un stand
   String standName; // nom du stand ou 'Boutique'
 
-  ShopModel({
+  ShopStandModel({
     required this.id,
     required this.produits,
     required this.quantite,
@@ -23,7 +23,7 @@ class ShopModel {
   });
 
   /// Création depuis un document Firestore
-  factory ShopModel.fromFirestore(DocumentSnapshot doc) {
+  factory ShopStandModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
     int parseInt(dynamic value) {
@@ -36,7 +36,7 @@ class ShopModel {
     final quantite = parseInt(data['quantite']);
     final consommer = parseInt(data['consommer']);
 
-    return ShopModel(
+    return ShopStandModel(
       id: doc.id,
       produits: data['produits'] ?? '',
       quantite: quantite,
@@ -92,7 +92,7 @@ class ChiffreAffaireItem {
 class BoutiqueModel {
   String id;
   String nom;
-  List<ShopModel> stock;
+  List<ShopStandModel> stock;
   List<ChiffreAffaireItem> chiffreAffaire;
 
   BoutiqueModel({
@@ -104,7 +104,7 @@ class BoutiqueModel {
 
   /// Création depuis le document principal
   factory BoutiqueModel.fromFirestore(DocumentSnapshot doc,
-      {List<ShopModel>? stockItems,
+      {List<ShopStandModel>? stockItems,
       List<ChiffreAffaireItem>? chiffreItems}) {
     final data = doc.data() as Map<String, dynamic>;
     return BoutiqueModel(

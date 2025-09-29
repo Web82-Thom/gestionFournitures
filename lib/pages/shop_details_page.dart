@@ -14,10 +14,10 @@ class LaBoutiquePage extends StatefulWidget {
   }): super(key: key);
 
   @override
-  State<LaBoutiquePage> createState() => LaBoutiquePageState();
+  State<LaBoutiquePage> createState() => ShopDetailsPage();
 }
 
-class LaBoutiquePageState extends State<LaBoutiquePage> {
+class ShopDetailsPage extends State<LaBoutiquePage> {
   final CollectionReference stockRef = FirebaseFirestore.instance.collection(
     'boutiques',
   );
@@ -25,7 +25,7 @@ class LaBoutiquePageState extends State<LaBoutiquePage> {
 
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
-  List<ShopModel> listStock = [];
+  List<ShopStandModel> listStock = [];
 
   void dispose() {
     for (var c in _quantiteControllers) c.dispose();
@@ -180,7 +180,7 @@ class LaBoutiquePageState extends State<LaBoutiquePage> {
               final quantite = int.tryParse(quantiteController.text) ?? 0;
               final consommer = int.tryParse(consommerController.text) ?? 0;
               if (name.isNotEmpty) {
-                final newProduct = ShopModel(
+                final newProduct = ShopStandModel(
                   id: '',
                   produits: name,
                   quantite: quantite,
@@ -233,7 +233,7 @@ class LaBoutiquePageState extends State<LaBoutiquePage> {
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
               return const Center(child: Text("Aucun produit pour ce stand"));
             listStock = snapshot.data!.docs
-                .map((doc) => ShopModel.fromFirestore(doc))
+                .map((doc) => ShopStandModel.fromFirestore(doc))
                 .toList();
             listStock.sort(
               (a, b) =>

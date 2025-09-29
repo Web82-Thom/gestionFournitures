@@ -2,28 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/shop_model.dart';
 
-class StandDetailPage extends StatefulWidget {
+class StandDetailsPage extends StatefulWidget {
   final String standId;
   final String standName;
 
-  const StandDetailPage({
+  const StandDetailsPage({
     Key? key,
     required this.standId,
     required this.standName,
   }) : super(key: key);
 
   @override
-  State<StandDetailPage> createState() => _StandDetailPageState();
+  State<StandDetailsPage> createState() => _StandDetailPageState();
 }
 
-class _StandDetailPageState extends State<StandDetailPage> {
+class _StandDetailPageState extends State<StandDetailsPage> {
   final CollectionReference _stockRef = FirebaseFirestore.instance.collection(
     'stands',
   );
 
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
-  List<ShopModel> _products = [];
+  List<ShopStandModel> _products = [];
 
   @override
   void dispose() {
@@ -71,7 +71,7 @@ class _StandDetailPageState extends State<StandDetailPage> {
               final quantite = int.tryParse(quantiteController.text) ?? 0;
               final consommer = int.tryParse(consommerController.text) ?? 0;
               if (produit.isNotEmpty) {
-                final newProduct = ShopModel(
+                final newProduct = ShopStandModel(
                   id: '',
                   produits: produit,
                   quantite: quantite,
@@ -184,7 +184,7 @@ class _StandDetailPageState extends State<StandDetailPage> {
               return const Center(child: Text("Aucun produit pour ce stand"));
 
             _products = snapshot.data!.docs
-                .map((doc) => ShopModel.fromFirestore(doc))
+                .map((doc) => ShopStandModel.fromFirestore(doc))
                 .toList();
             _products.sort((a, b) => a.produits.toLowerCase().compareTo(b.produits.toLowerCase()));
             _updateControllers();
