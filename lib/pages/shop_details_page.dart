@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/shop_model.dart';
@@ -7,11 +8,8 @@ class LaBoutiquePage extends StatefulWidget {
   final String shopId;
   final String shopName;
 
-  const LaBoutiquePage({
-    Key? key,
-    required this.shopId,
-    required this.shopName,
-  }): super(key: key);
+  const LaBoutiquePage({Key? key, required this.shopId, required this.shopName})
+    : super(key: key);
 
   @override
   State<LaBoutiquePage> createState() => ShopDetailsPage();
@@ -21,17 +19,21 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
   final CollectionReference stockRef = FirebaseFirestore.instance.collection(
     'boutiques',
   );
-  
 
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
   List<ShopStandModel> listStock = [];
 
   void dispose() {
-    for (var c in _quantiteControllers) c.dispose();
-    for (var c in _consoControllers) c.dispose();
+    for (var c in _quantiteControllers) {
+      c.dispose();
+    }
+    for (var c in _consoControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
+
   /// Supprimer un produit avec confirmation
   void _confirmDelete(String productId) {
     showDialog(
@@ -51,6 +53,14 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
                   .collection('stockToulouse')
                   .doc(productId)
                   .delete();
+              await _addHistory(
+                action: 'suppression',    
+                produit: '',
+                quantite: 0,
+                reste: 0,
+                shopName: widget.shopName,
+              );
+              
               if (!context.mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +74,36 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
     );
   }
 
+ Future<void> _addHistory({
+  required String action,
+  required String produit,
+  required int quantite,
+  required int reste,
+  required String shopName,
+}) async {
+  final currentUser = FirebaseAuth.instance.currentUser;
+  String nickname = 'inconnu';
+  if (currentUser != null) {
+    // Récupérer le nickname dans Firestore
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    if (userDoc.exists) {
+      nickname = userDoc['nickname'] ?? currentUser.email ?? 'inconnu';
+    }
+  }
+  await FirebaseFirestore.instance.collection('histories').add({
+    'user': nickname, // 👈 On enregistre le nickname
+    'shopName': shopName,
+    'standName': '',
+    'action': action,
+    'produit': produit,
+    'quantite': quantite,
+    'reste': reste,
+    'date': FieldValue.serverTimestamp(),
+  });
+}
   /// Modifier Qté ou Conso
   Future<void> _updateCell(String productId, String key, String value) async {
     int parsedValue = int.tryParse(value) ?? 0;
@@ -92,21 +132,18 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
         'reste': reste,
         'commande': commande,
       });
-    });
+      // Historique
+      await _addHistory(
+        action: 'modification',
+        produit: data['produits'] ?? '',
+        quantite: parsedValue,
+        reste: reste,
+        shopName: widget.shopName,
+      );});
   }
-  // void _updateControllers() {
-  //   _quantiteControllers = listStock
-  //       .map((p) => TextEditingController(text: p.quantite.toString()))
-  //       .toList();
-  //   _consoControllers = listStock
-  //       .map((p) => TextEditingController(text: p.consommer.toString()))
-  //       .toList();
-  // }
-
   /// Modifier le nom du produit
   void modifierNomProduit(int index) {
     final controller = TextEditingController(text: listStock[index].produits);
-
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -127,6 +164,7 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
                 await stockRef.doc(listStock[index].id).update({
                   'produits': newName,
                 });
+                if (!context.mounted) return;
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Produit modifié ✅")),
@@ -139,13 +177,11 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
       ),
     );
   }
-
   /// Ajouter un produit
   void _addProductDialog() {
     final nameController = TextEditingController();
     final quantiteController = TextEditingController();
     final consommerController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -192,6 +228,13 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
                     .doc(widget.shopId)
                     .collection('stockToulouse')
                     .add(newProduct.toMap());
+                await _addHistory(
+                  action: 'création', 
+                  produit: name,
+                  quantite: quantite,
+                  reste: quantite - consommer,
+                  shopName: widget.shopName,
+                );
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -209,7 +252,6 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
   @override
   Widget build(BuildContext context) {
     final productsRef = stockRef.doc(widget.shopId).collection('stockToulouse');
-
     return Scaffold(
       appBar: AppBar(
         title: Text("La Boutique - ${widget.shopName}"),
@@ -228,10 +270,12 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
         child: StreamBuilder<QuerySnapshot>(
           stream: productsRef.snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting)
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Center(child: Text("Aucun produit pour ce stand"));
+            }
             listStock = snapshot.data!.docs
                 .map((doc) => ShopStandModel.fromFirestore(doc))
                 .toList();
@@ -240,16 +284,16 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
                   a.produits.toLowerCase().compareTo(b.produits.toLowerCase()),
             );
             // Synchroniser les controllers
-_quantiteControllers = List.generate(
-  listStock.length,
-  (i) => TextEditingController(text: listStock[i].quantite.toString()),
-);
-
-_consoControllers = List.generate(
-  listStock.length,
-  (i) => TextEditingController(text: listStock[i].consommer.toString()),
-);
-
+            _quantiteControllers = List.generate(
+              listStock.length,
+              (i) => TextEditingController(text: listStock[i].quantite.toString()),
+            );
+            _consoControllers = List.generate(
+              listStock.length,
+              (i) => TextEditingController(
+                text: listStock[i].consommer.toString(),
+              ),
+            );
             return LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
@@ -340,7 +384,7 @@ _consoControllers = List.generate(
                       child: ListView.builder(
                         itemCount: listStock.length,
                         itemBuilder: (context, index) {
-                          final p = listStock[index];
+                          final product = listStock[index];
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             decoration: BoxDecoration(
@@ -360,7 +404,7 @@ _consoControllers = List.generate(
                                       onDoubleTap: () {
                                         final controller =
                                             TextEditingController(
-                                              text: p.produits,
+                                              text: product.produits,
                                             );
                                         showDialog(
                                           context: context,
@@ -389,12 +433,11 @@ _consoControllers = List.generate(
                                                     await stockRef
                                                         .doc(widget.shopId)
                                                         .collection('stockToulouse')
-                                                        .doc(p.id)
-                                                        .update({
-                                                          'produits': newName,
-                                                        });
-                                                    if (!context.mounted)
+                                                        .doc(product.id)
+                                                        .update({'produits': newName});
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     Navigator.pop(context);
                                                     ScaffoldMessenger.of(
                                                       context,
@@ -413,10 +456,9 @@ _consoControllers = List.generate(
                                           ),
                                         );
                                       },
-                                      onLongPress: () =>
-                                          _confirmDelete(p.id),
+                                      onLongPress: () => _confirmDelete(product.id),
                                       child: Text(
-                                        p.produits,
+                                        product.produits,
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
@@ -429,11 +471,8 @@ _consoControllers = List.generate(
                                       controller: _quantiteControllers[index],
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
-                                      onSubmitted: (val) => _updateCell(
-                                        p.id,
-                                        'quantite',
-                                        val,
-                                      ),
+                                      onSubmitted: (val) =>
+                                          _updateCell(product.id, 'quantite', val),
                                     ),
                                   ),
                                 ),
@@ -444,23 +483,20 @@ _consoControllers = List.generate(
                                       controller: _consoControllers[index],
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
-                                      onSubmitted: (val) => _updateCell(
-                                        p.id,
-                                        'consommer',
-                                        val,
-                                      ),
+                                      onSubmitted: (val) =>
+                                          _updateCell(product.id, 'consommer', val),
                                     ),
                                   ),
                                 ),
                                 Expanded(
                                   flex: 15,
                                   child: Center(
-                                    child: Text(p.reste.toString()),
+                                    child: Text(product.reste.toString()),
                                   ),
                                 ),
                                 Expanded(
                                   flex: 20,
-                                  child: Center(child: Text(p.commande)),
+                                  child: Center(child: Text(product.commande)),
                                 ),
                               ],
                             ),
