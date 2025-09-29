@@ -1,46 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gestion_fournitures/controllers/history_controller.dart';
 import 'package:gestion_fournitures/models/historyModel.dart';
 
 class HistoriesPage extends StatelessWidget {
   const HistoriesPage({super.key});
-  /// Supprimer un historique avec confirmation
-Future<void> deleteHistory(BuildContext context, String historyId) async {
-  final CollectionReference historiesRef =
-      FirebaseFirestore.instance.collection('histories');
-
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Confirmer la suppression"),
-      content: const Text("Voulez-vous vraiment supprimer cet historique ?"),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text("Annuler"),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text("Supprimer"),
-        ),
-      ],
-    ),
-  );
-
-  if (confirmed == true) {
-    await historiesRef.doc(historyId).delete();
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Historique supprimé ✅")),
-      );
-    }
-  }
-}
-
+  
 
   @override
   Widget build(BuildContext context) {
     final CollectionReference historiesRef = FirebaseFirestore.instance.collection('histories');
+    final HistoryController historyController = HistoryController();  
 
     return Scaffold(
       appBar: AppBar(
@@ -74,7 +44,7 @@ Future<void> deleteHistory(BuildContext context, String historyId) async {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: const Row(
                     children: [
-                      Expanded(flex: 2, child: Text("Utilisateur", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                      Expanded(flex: 2, child: Text("Prénom", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                       Expanded(flex: 2, child: Text("Action", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                       Expanded(flex: 2, child: Text("Produit", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                       Expanded(flex: 1, child: Text("Reste", textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -97,7 +67,7 @@ Future<void> deleteHistory(BuildContext context, String historyId) async {
                         color: isEven ? Colors.orange.shade50 : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: GestureDetector(
-                          onLongPress: () => deleteHistory(context, h.id),
+                          onLongPress: () => historyController.deleteHistory( context, h.id,),
                           child: Row(
                             children: [
                               Expanded(flex: 2, child: Text(h.user, textAlign: TextAlign.center)),

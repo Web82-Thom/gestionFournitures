@@ -7,10 +7,10 @@ class StandDetailsPage extends StatefulWidget {
   final String standName;
 
   const StandDetailsPage({
-    Key? key,
+    super.key,
     required this.standId,
     required this.standName,
-  }) : super(key: key);
+  });
 
   @override
   State<StandDetailsPage> createState() => _StandDetailPageState();
@@ -67,13 +67,13 @@ class _StandDetailPageState extends State<StandDetailsPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final produit = produitsController.text.trim();
+              final product = produitsController.text.trim();
               final quantite = int.tryParse(quantiteController.text) ?? 0;
               final consommer = int.tryParse(consommerController.text) ?? 0;
-              if (produit.isNotEmpty) {
+              if (product.isNotEmpty) {
                 final newProduct = ShopStandModel(
                   id: '',
-                  produits: produit,
+                  product: product,
                   quantite: quantite,
                   consommer: consommer,
                   reste: quantite - consommer,
@@ -186,7 +186,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
             _products = snapshot.data!.docs
                 .map((doc) => ShopStandModel.fromFirestore(doc))
                 .toList();
-            _products.sort((a, b) => a.produits.toLowerCase().compareTo(b.produits.toLowerCase()));
+            _products.sort((a, b) => a.product.toLowerCase().compareTo(b.product.toLowerCase()));
             _updateControllers();
             
 
@@ -300,7 +300,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
                                       onDoubleTap: () {
                                         final controller =
                                             TextEditingController(
-                                              text: p.produits,
+                                              text: p.product,
                                             );
                                         showDialog(
                                           context: context,
@@ -331,7 +331,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
                                                         .collection('stock')
                                                         .doc(p.id)
                                                         .update({
-                                                          'produits': newName,
+                                                          'product': newName,
                                                         });
                                                     if (!context.mounted)
                                                       return;
@@ -355,7 +355,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
                                       },
                                       onLongPress: () => _confirmDelete(p.id),
                                       child: Text(
-                                        p.produits,
+                                        p.product,
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
