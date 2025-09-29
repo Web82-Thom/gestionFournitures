@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/shop_model.dart';
 
-class StandDetailPage extends StatefulWidget {
+class StandDetailsPage extends StatefulWidget {
   final String standId;
   final String standName;
 
-  const StandDetailPage({
+  const StandDetailsPage({
     Key? key,
     required this.standId,
     required this.standName,
   }) : super(key: key);
 
   @override
-  State<StandDetailPage> createState() => _StandDetailPageState();
+  State<StandDetailsPage> createState() => _StandDetailPageState();
 }
 
-class _StandDetailPageState extends State<StandDetailPage> {
+class _StandDetailPageState extends State<StandDetailsPage> {
   final CollectionReference _stockRef = FirebaseFirestore.instance.collection(
     'stands',
   );

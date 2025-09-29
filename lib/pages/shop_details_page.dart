@@ -14,10 +14,10 @@ class LaBoutiquePage extends StatefulWidget {
   }): super(key: key);
 
   @override
-  State<LaBoutiquePage> createState() => LaBoutiquePageState();
+  State<LaBoutiquePage> createState() => ShopDetailsPage();
 }
 
-class LaBoutiquePageState extends State<LaBoutiquePage> {
+class ShopDetailsPage extends State<LaBoutiquePage> {
   final CollectionReference stockRef = FirebaseFirestore.instance.collection(
     'boutiques',
   );

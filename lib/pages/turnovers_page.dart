@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/stand_model.dart';
-import 'chiffre_affaire_tableau_page.dart';
+import 'turnover_table_page.dart';
 
 class ChiffresAffairesPage extends StatelessWidget {
   const ChiffresAffairesPage({super.key});
@@ -9,7 +9,7 @@ class ChiffresAffairesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CollectionReference standsCollection = FirebaseFirestore.instance.collection('stands');
-    // final CollectionReference shopCollection = FirebaseFirestore.instance.collection('boutiques');
+    final CollectionReference shopCollection = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(
@@ -37,7 +37,7 @@ class ChiffresAffairesPage extends StatelessWidget {
 
             // Ajouter un "boutique" en haut
             final items = [
-              StandModel(id: "boutique", name: "BOUTIQUE"),
+              StandModel(id: shopCollection.id, name: shopCollection.id),
               ...stands,
             ];
 
@@ -59,7 +59,7 @@ class ChiffresAffairesPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            ChiffreAffaireTableauPage(stand: item),
+                            TurnoverTablePage(stand: item),
                       ),
                     );
                   },

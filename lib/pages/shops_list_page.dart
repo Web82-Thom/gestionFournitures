@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'stand_detail_page.dart';
+import 'package:gestion_fournitures/pages/shop_details_page.dart';
 
-class StandsPage extends StatelessWidget {
-  const StandsPage({Key? key}) : super(key: key);
+class ShopsListPage extends StatelessWidget {
+  const ShopsListPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final standsRef = FirebaseFirestore.instance.collection('stands');
+    final shopRef = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Stands")),
+      appBar: AppBar(title: const Text("Les Boutiques")),
       body: StreamBuilder<QuerySnapshot>(
-        stream: standsRef.snapshots(),
+        stream: shopRef.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("Aucun stand trouvé"));
+            return const Center(child: Text("Aucune boutique trouvée"));
           }
 
-          final stands = snapshot.data!.docs;
+          final shops = snapshot.data!.docs;
 
           return Padding(
             padding: const EdgeInsets.all(12),
@@ -32,20 +32,20 @@ class StandsPage extends StatelessWidget {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
-              itemCount: stands.length,
+              itemCount: shops.length,
               itemBuilder: (context, index) {
-                final stand = stands[index];
-                final standId = stand.id;
-                final standName = (stand['name'] ?? 'Stand').toString();
+                final shop = shops[index];
+                final shopId = shop.id;
+                final shopName = (shop['nom'] ?? 'Boutique').toString();
 
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => StandDetailPage(
-                          standId: standId,
-                          standName: standName,
+                        builder: (_) => LaBoutiquePage(
+                          shopId: shopId,
+                          shopName: shopName,
                         ),
                       ),
                     );
@@ -67,7 +67,7 @@ class StandsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        standName,
+                        shopName,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 18,

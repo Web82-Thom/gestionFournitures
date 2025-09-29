@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gestion_fournitures/pages/shop_page.dart';
-import 'package:gestion_fournitures/pages/stands_page.dart';
-import 'package:gestion_fournitures/pages/chiffres_affaires_page.dart';
+import 'package:gestion_fournitures/pages/stands_list_page.dart';
+import 'package:gestion_fournitures/pages/turnovers_page.dart';
 import 'package:gestion_fournitures/pages/edit_profile_page.dart';
+import 'package:gestion_fournitures/pages/shops_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ShopsPage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ShopsListPage()));
             },
             child: Center(
               child: Column(

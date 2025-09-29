@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/models/stand_model.dart'; // ton modèle
 
-class ChiffreAffaireTableauPage extends StatelessWidget {
+class TurnoverTablePage extends StatelessWidget {
   final StandModel stand;
 
-  const ChiffreAffaireTableauPage({super.key, required this.stand});
+  const TurnoverTablePage({super.key, required this.stand});
 
   @override
   Widget build(BuildContext context) {
