@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Modèle pour un produit du stock
 class ShopStandModel {
   String id;
-  String produits;
+  String product;
   int quantite;
   int consommer;
   int reste;
@@ -13,7 +13,7 @@ class ShopStandModel {
 
   ShopStandModel({
     required this.id,
-    required this.produits,
+    required this.product,
     required this.quantite,
     required this.consommer,
     required this.reste,
@@ -38,7 +38,7 @@ class ShopStandModel {
 
     return ShopStandModel(
       id: doc.id,
-      produits: data['produits'] ?? '',
+      product: data['product'] ?? '',
       quantite: quantite,
       consommer: consommer,
       reste: quantite - consommer,
@@ -49,7 +49,7 @@ class ShopStandModel {
   /// Convertir en Map pour sauvegarde dans Firestore
   Map<String, dynamic> toMap() {
     return {
-      'produits': produits,
+      'product': product,
       'quantite': quantite,
       'consommer': consommer,
       'reste': reste,
