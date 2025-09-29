@@ -36,7 +36,7 @@ class ShopsListPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final shop = shops[index];
                 final shopId = shop.id;
-                final shopName = (shop['nom'] ?? 'Boutique').toString();
+                final shopName = (shop['name'] ?? 'Boutique').toString();
 
                 return GestureDetector(
                   onTap: () {
