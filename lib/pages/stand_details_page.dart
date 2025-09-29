@@ -23,7 +23,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
 
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
-  List<ShopModel> _products = [];
+  List<ShopStandModel> _products = [];
 
   @override
   void dispose() {
@@ -71,7 +71,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
               final quantite = int.tryParse(quantiteController.text) ?? 0;
               final consommer = int.tryParse(consommerController.text) ?? 0;
               if (produit.isNotEmpty) {
-                final newProduct = ShopModel(
+                final newProduct = ShopStandModel(
                   id: '',
                   produits: produit,
                   quantite: quantite,
@@ -184,7 +184,7 @@ class _StandDetailPageState extends State<StandDetailsPage> {
               return const Center(child: Text("Aucun produit pour ce stand"));
 
             _products = snapshot.data!.docs
-                .map((doc) => ShopModel.fromFirestore(doc))
+                .map((doc) => ShopStandModel.fromFirestore(doc))
                 .toList();
             _products.sort((a, b) => a.produits.toLowerCase().compareTo(b.produits.toLowerCase()));
             _updateControllers();

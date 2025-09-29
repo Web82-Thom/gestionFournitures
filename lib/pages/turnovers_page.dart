@@ -3,13 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/stand_model.dart';
 import 'turnover_table_page.dart';
 
-class ChiffresAffairesPage extends StatelessWidget {
-  const ChiffresAffairesPage({super.key});
+class TurnoversPage extends StatelessWidget {
+  const TurnoversPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final CollectionReference standsCollection = FirebaseFirestore.instance.collection('stands');
-    final CollectionReference shopCollection = FirebaseFirestore.instance.collection('boutiques');
+    final CollectionReference boutiquesCollection = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(
@@ -19,64 +19,83 @@ class ChiffresAffairesPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
-        child: StreamBuilder<QuerySnapshot>(
-          stream: standsCollection.snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        child: FutureBuilder<QuerySnapshot>(
+          future: boutiquesCollection.get(), // 🔹 on lit les boutiques
+          builder: (context, shopSnapshot) {
+            if (shopSnapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("Aucun stand disponible"));
+            if (!shopSnapshot.hasData || shopSnapshot.data!.docs.isEmpty) {
+              return const Center(child: Text("Aucune boutique disponible"));
             }
 
-            // Transforme chaque document en StandModel
-            final stands = snapshot.data!.docs
-                .map((doc) => StandModel.fromFirestore(doc))
-                .toList();
+            // 🔹 On prend la première boutique trouvée (ex: Toulouse)
+            final shopDoc = shopSnapshot.data!.docs.first;
+            final shopId = shopDoc.id;
+            final shopName = shopDoc['name'] ?? 'Boutique';
 
-            // Ajouter un "boutique" en haut
-            final items = [
-              StandModel(id: shopCollection.id, name: shopCollection.id),
-              ...stands,
-            ];
+            return StreamBuilder<QuerySnapshot>(
+              stream: standsCollection.snapshots(),
+              builder: (context, standSnapshot) {
+                if (standSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            return GridView.builder(
-              itemCount: items.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemBuilder: (context, index) {
-                final item = items[index];
+                if (!standSnapshot.hasData || standSnapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("Aucun stand disponible"));
+                }
 
-                return GestureDetector(
-                  onTap: () {
-                    // Ouvre la page chiffre d'affaire du stand ou de la boutique
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            TurnoverTablePage(stand: item),
+                // Convertir les stands
+                final stands = standSnapshot.data!.docs
+                    .map((doc) => StandModel.fromFirestore(doc))
+                    .toList();
+
+                // Ajouter la boutique comme premier élément
+                final items = [
+                  StandModel(id: shopId, name: shopName), // 🔹 bon nom ici
+                  ...stands,
+                ];
+
+                return GridView.builder(
+                  itemCount: items.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TurnoverTablePage(stand: item),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        color: Colors.green.shade200,
+                        child: Center(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
                     );
                   },
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    color: Colors.green.shade200,
-                    child: Center(
-                      child: Text(
-                        item.name,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
                 );
               },
             );
@@ -86,3 +105,4 @@ class ChiffresAffairesPage extends StatelessWidget {
     );
   }
 }
+

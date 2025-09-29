@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
           margin: EdgeInsets.all(20),
           child: InkWell(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ChiffresAffairesPage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => TurnoversPage()));
             },
             child: Center(
               child: Column(
