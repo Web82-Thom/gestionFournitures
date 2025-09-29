@@ -5,6 +5,7 @@ import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/home_page.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
 import 'firebase_options.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('fr'), // 🇫🇷 Français
+        Locale('en'), // 🇬🇧 Anglais si tu veux
+      ],
       home: AuthWrapper(),
     );
   }
