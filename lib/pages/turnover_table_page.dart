@@ -15,7 +15,8 @@ class TurnoverTablePage extends StatefulWidget {
   @override
   State<TurnoverTablePage> createState() => _TurnoverTablePageState();
 }
-
+int selectedMonth = DateTime.now().month;
+  int selectedYear = DateTime.now().year;
 class _TurnoverTablePageState extends State<TurnoverTablePage> {
   late CollectionReference turnoverRef;
 
@@ -33,7 +34,13 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
             .doc(widget.stand.id)
             .collection('chiffreAffaire');
   }
-
+  String monthName(int month) {
+    const months = [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ];
+    return months[month - 1];
+  }
   /// Ajouter un chiffre d'affaire
   void _addTurnoverDialog() {
     final recetteController = TextEditingController();
@@ -223,6 +230,28 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
 
           final docs = snapshot.data!.docs;
 
+          // 🔹 Calcul du total selon mois/année sélectionnés
+          double monthlyTotal = 0;
+          for (var doc in docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final dateStr = data['date'] ?? '';
+            final recette = (data['recette'] ?? 0).toDouble();
+
+            try {
+              final parts = dateStr.split('/');
+              if (parts.length == 3) {
+                final day = int.parse(parts[0]);
+                final month = int.parse(parts[1]);
+                final year = int.parse(parts[2]);
+                final docDate = DateTime(year, month, day);
+
+                if (docDate.month == selectedMonth && docDate.year == selectedYear) {
+                  monthlyTotal += recette;
+                }
+              }
+            } catch (_) {}
+          }
+
           return Column(
             children: [
               Center(
@@ -234,6 +263,56 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                   ),
                 ),
               ),
+
+              // 🔹 Sélecteur de mois
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedMonth,
+                      items: List.generate(12, (index) {
+                        final monthNum = index + 1;
+                        return DropdownMenuItem(
+                          value: monthNum,
+                          child: Text(monthName(monthNum)),
+                        );
+                      }),
+                      onChanged: (value) {
+                        if (value != null) setState(() => selectedMonth = value);
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items: List.generate(5, (index) {
+                        final year = DateTime.now().year-2 + index;
+                        return DropdownMenuItem(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }),
+                      onChanged: (value) {
+                        if (value != null) setState(() => selectedYear = value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // 🔹 Total du mois sélectionné
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  'Total de ${monthName(selectedMonth)} $selectedYear : $monthlyTotal €',
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green),
+                ),
+              ),
+
               Container(
                 color: Colors.blueAccent,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -258,6 +337,8 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                   ],
                 ),
               ),
+
+              // 🔹 Tableau identique au tien
               Expanded(
                 child: ListView.builder(
                   itemCount: docs.length,
@@ -300,5 +381,4 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
         },
       ),
     );
-  }
-}
+  }}
