@@ -3,6 +3,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class HistoryController extends ChangeNotifier {
+  final currentUser = FirebaseAuth.instance.currentUser;
+  String? _nickname;
+
+  Future<String> getNickname() async {
+    if (_nickname != null) return _nickname!;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return 'inconnu';
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    _nickname = userDoc.exists ? (userDoc['nickname'] ?? currentUser.email ?? 'inconnu') : 'inconnu';
+    return _nickname!;
+  }
   /// Ajouter une entrée dans l'historique
   Future<void> addHistory({
     required String action,
@@ -10,23 +24,13 @@ class HistoryController extends ChangeNotifier {
     required int quantite,
     required int reste,
     required String shopName,
+    String standName = '',
   }) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    String nickname = 'inconnu';
-    if (currentUser != null) {
-      // Récupérer le nickname dans Firestore
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-      if (userDoc.exists) {
-        nickname = userDoc['nickname'] ?? currentUser.email ?? 'inconnu';
-      }
-    }
+    final nickname = await getNickname();
     await FirebaseFirestore.instance.collection('histories').add({
-      'user': nickname, // 👈 On enregistre le nickname
+      'user': nickname,
       'shopName': shopName,
-      'standName': '',
+      'standName': standName,
       'action': action,
       'product': product,
       'quantite': quantite,
@@ -64,6 +68,4 @@ class HistoryController extends ChangeNotifier {
         }
       }
     }
-    
-
 }

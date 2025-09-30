@@ -8,8 +8,10 @@ class TurnoversPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference standsCollection = FirebaseFirestore.instance.collection('stands');
-    final CollectionReference boutiquesCollection = FirebaseFirestore.instance.collection('boutiques');
+    final CollectionReference standsCollection =
+        FirebaseFirestore.instance.collection('stands');
+    final CollectionReference boutiquesCollection =
+        FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(
@@ -20,20 +22,23 @@ class TurnoversPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: FutureBuilder<QuerySnapshot>(
-          future: boutiquesCollection.get(), // 🔹 on lit les boutiques
-          builder: (context, shopSnapshot) {
-            if (shopSnapshot.connectionState == ConnectionState.waiting) {
+          future: boutiquesCollection.get(),
+          builder: (context, boutiqueSnapshot) {
+            if (boutiqueSnapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (!shopSnapshot.hasData || shopSnapshot.data!.docs.isEmpty) {
+            if (!boutiqueSnapshot.hasData || boutiqueSnapshot.data!.docs.isEmpty) {
               return const Center(child: Text("Aucune boutique disponible"));
             }
 
-            // 🔹 On prend la première boutique trouvée (ex: Toulouse)
-            final shopDoc = shopSnapshot.data!.docs.first;
-            final shopId = shopDoc.id;
-            final shopName = shopDoc['name'] ?? 'Boutique';
+            // Liste des boutiques
+            final boutiques = boutiqueSnapshot.data!.docs
+                .map((doc) => StandModel(
+                      id: doc.id,
+                      name: doc['name'] ?? 'Boutique',
+                    ))
+                .toList();
 
             return StreamBuilder<QuerySnapshot>(
               stream: standsCollection.snapshots(),
@@ -46,14 +51,14 @@ class TurnoversPage extends StatelessWidget {
                   return const Center(child: Text("Aucun stand disponible"));
                 }
 
-                // Convertir les stands
+                // Liste des stands
                 final stands = standSnapshot.data!.docs
                     .map((doc) => StandModel.fromFirestore(doc))
                     .toList();
 
-                // Ajouter la boutique comme premier élément
+                // On combine boutiques et stands
                 final items = [
-                  StandModel(id: shopId, name: shopName), // 🔹 bon nom ici
+                  ...boutiques,
                   ...stands,
                 ];
 
@@ -67,13 +72,17 @@ class TurnoversPage extends StatelessWidget {
                   ),
                   itemBuilder: (context, index) {
                     final item = items[index];
+                    final isShop = index < boutiques.length; // 🔹 Les premières sont des boutiques
 
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => TurnoverTablePage(stand: item),
+                            builder: (_) => TurnoverTablePage(
+                              stand: item,
+                              isShop: isShop,
+                            ),
                           ),
                         );
                       },
@@ -82,7 +91,7 @@ class TurnoversPage extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        color: Colors.green.shade200,
+                        color: isShop ? Colors.green.shade200 : Colors.blue.shade200,
                         child: Center(
                           child: Text(
                             item.name,
@@ -105,4 +114,3 @@ class TurnoversPage extends StatelessWidget {
     );
   }
 }
-

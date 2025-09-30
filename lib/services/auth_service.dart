@@ -3,32 +3,42 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  Future<void> signIn(String email, String password) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+  // Connexion
+  Future<User?> signIn({required String email, required String password}) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return credential.user;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
+    }
   }
 
-  Future<void> signUp({
+  // Inscription avec nickname
+  Future<User?> signUp({
     required String email,
     required String password,
-    required String nickname,
-    required String imagePath,
+    String? nickname,
   }) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    await _db.collection('users').doc(credential.user!.uid).set({
-      'email': email,
-      'nickname': nickname,
-      'photoPath': imagePath,
-    });
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      final user = credential.user;
+
+      if (user != null) {
+        // On crée le document Firestore pour l'utilisateur
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'email': email,
+          'nickname': nickname ?? '',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      return user;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
+    }
   }
 
-  Future<void> signOut() async {
-    await _auth.signOut();
-  }
+  // Stream pour écouter l'état de l'utilisateur
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 }
