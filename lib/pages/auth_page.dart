@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
-// import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'home_page.dart';
 
 class AuthPage extends StatefulWidget {
   @override
@@ -16,18 +15,9 @@ class _AuthPageState extends State<AuthPage> {
   final _nicknameController = TextEditingController();
   bool _isLogin = true;
   bool _obscureText = true;
-  File? _image;
+
   final AuthService _authService = AuthService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // Future<void> _pickImage() async {
-  //   final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-  //   if (pickedFile != null) {
-  //     setState(() {
-  //       _image = File(pickedFile.path);
-  //     });
-  //   }
-  // }
 
   Future<void> _resetPassword() async {
     if (_emailController.text.trim().isEmpty) {
@@ -39,35 +29,49 @@ class _AuthPageState extends State<AuthPage> {
     try {
       await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email de réinitialisation envoyé 📩,vérifier dans vos SPAM")),
+        const SnackBar(
+            content: Text(
+                "Email de réinitialisation envoyé 📩, vérifier vos SPAM")),
       );
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur : ${e.message}")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Erreur : ${e.message}")));
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    try {
-      if (_isLogin) {
-        await _authService.signIn(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-      } else {
-        await _authService.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-          nickname: _nicknameController.text.trim(),
-          imagePath: _image?.path ?? '',
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+  if (!_formKey.currentState!.validate()) return;
+
+  try {
+    if (_isLogin) {
+      await _authService.signIn(
+        email:  _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+    } else {
+      await _authService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        nickname: _nicknameController.text.trim(),
+      );
     }
+
+    // ✅ Vérifier si le widget est encore monté
+    if (!mounted) return;
+
+    // Redirection vers la page principale
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => HomePage()),
+    );
+
+  } catch (e) {
+    if (!mounted) return; // ne pas afficher si widget démonté
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erreur : $e')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -75,27 +79,30 @@ class _AuthPageState extends State<AuthPage> {
       appBar: AppBar(title: Text(_isLogin ? 'Connexion' : 'Inscription')),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
-                SizedBox(height: 20),
-                CircleAvatar(
+                const SizedBox(height: 20),
+                const CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('assets/images/logoMyCookieFactory.jpg'),
+                  backgroundImage:
+                      AssetImage('assets/images/logoMyCookieFactory.jpg'),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
-                  validator: (value) => value!.contains('@') ? null : 'Email invalide',
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  validator: (value) =>
+                      value!.contains('@') ? null : 'Email invalide',
                 ),
                 if (!_isLogin)
                   TextFormField(
                     controller: _nicknameController,
-                    decoration: InputDecoration(labelText: 'Surnom'),
-                    validator: (value) => value!.isEmpty ? 'Champ requis' : null,
+                    decoration: const InputDecoration(labelText: 'Surnom'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Champ requis' : null,
                   ),
                 TextFormField(
                   controller: _passwordController,
@@ -105,42 +112,34 @@ class _AuthPageState extends State<AuthPage> {
                     suffixIcon: IconButton(
                       icon: Icon(
                           _obscureText ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscureText = !_obscureText),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
                     ),
                   ),
-                  validator: (value) => value!.length >= 6 ? null : 'Minimum 6 caractères',
+                  validator: (value) => value!.length >= 6
+                      ? null
+                      : 'Minimum 6 caractères',
                 ),
-                // if (!_isLogin)
-                //   Column(
-                //     children: [
-                //       SizedBox(height: 10),
-                //       _image == null
-                //           ? Text('Aucune image sélectionnée')
-                //           : Image.file(_image!, height: 100),
-                //       ElevatedButton(
-                //         onPressed: _pickImage,
-                //         child: Text('Sélectionner une photo'),
-                //       ),
-                //     ],
-                //   ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _submit,
                   child: Text(_isLogin ? 'Connexion' : 'Inscription'),
                 ),
                 if (_isLogin)
                   ElevatedButton(
-                  onPressed: _resetPassword,
-                  child: Text( 'Mot de passe oublié ?'),
-                ),
+                    onPressed: _resetPassword,
+                    child: const Text('Mot de passe oublié ?'),
+                  ),
                 TextButton(
                   onPressed: () => setState(() => _isLogin = !_isLogin),
-                  child: Text(_isLogin ? 'Créer un compte' : 'Se connecter'),
+                  child: Text(
+                      _isLogin ? 'Créer un compte' : 'Se connecter'),
                 ),
-                SizedBox(height: 80),
-                CircleAvatar(
+                const SizedBox(height: 80),
+                const CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('assets/images/logoMyCookieFactory.jpg'),
+                  backgroundImage:
+                      AssetImage('assets/images/logoMyCookieFactory.jpg'),
                 ),
               ],
             ),

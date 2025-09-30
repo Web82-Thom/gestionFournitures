@@ -22,23 +22,19 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
   @override
   void initState() {
     super.initState();
-
-    if (widget.isShop) {
-      // Cas boutique → chiffreAffaireToulouse
-      turnoverRef = FirebaseFirestore.instance
-          .collection('boutiques')
-          .doc(widget.stand.id)
-          .collection('chiffreAffaireToulouse');
-    } else {
-      // Cas stand → chiffreAffaire
-      turnoverRef = FirebaseFirestore.instance
-          .collection('stands')
-          .doc(widget.stand.id)
-          .collection('chiffreAffaire');
-    }
+    // Déterminer la référence Firestore selon isShop
+    turnoverRef = widget.isShop
+        ? FirebaseFirestore.instance
+            .collection('boutiques')
+            .doc(widget.stand.id)
+            .collection('chiffreAffaire')
+        : FirebaseFirestore.instance
+            .collection('stands')
+            .doc(widget.stand.id)
+            .collection('chiffreAffaire');
   }
 
-    /// Ajouter une nouvelle ligne (date + recette) avec calendrier
+  /// Ajouter un chiffre d'affaire
   void _addTurnoverDialog() {
     final recetteController = TextEditingController();
     DateTime? selectedDate;
@@ -46,77 +42,72 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
     showDialog(
       context: context,
       builder: (_) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Ajouter un chiffre d'affaire"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Bouton pour choisir la date
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        selectedDate == null
-                            ? "Sélectionner une date"
-                            : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                      ),
+        builder: (context, setState) => AlertDialog(
+          title: const Text("Ajouter un chiffre d'affaire"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      selectedDate == null
+                          ? "Sélectionner une date"
+                          : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () async {
-                        final now = DateTime.now();
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: now,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                          locale: const Locale('fr'),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            selectedDate = picked;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: recetteController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Recette (€)"),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Annuler"),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        locale: const Locale('fr'),
+                      );
+                      if (picked != null) {
+                        setState(() => selectedDate = picked);
+                      }
+                    },
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (selectedDate != null) {
-                    final recette =
-                        double.tryParse(recetteController.text) ?? 0;
-                    await turnoverRef.add({
-                      'date':
-                          "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                      'recette': recette,
-                    });
-                    if (!mounted) return;
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Chiffre d'affaire ajouté ✅")),
-                    );
-                  }
-                },
-                child: const Text("Ajouter"),
+              const SizedBox(height: 10),
+              TextField(
+                controller: recetteController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Recette (€)"),
               ),
             ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Annuler"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (selectedDate != null) {
+                  final recette = double.tryParse(recetteController.text) ?? 0;
+                  await turnoverRef.add({
+                    'date':
+                        "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                    'recette': recette,
+                    'isShop': widget.isShop, // Sauvegarde du type
+                  });
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Chiffre d'affaire ajouté ✅")),
+                  );
+                }
+              },
+              child: const Text("Ajouter"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -159,6 +150,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                 await turnoverRef.doc(doc.id).update({
                   'date': newDate,
                   'recette': newRecette,
+                  'isShop': widget.isShop, // Conserver le type
                 });
                 if (!mounted) return;
                 Navigator.pop(context);
@@ -207,7 +199,8 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chiffre d'affaire - ${widget.stand.name}"),
+        title: Text(
+            "Chiffre d'affaire - ${widget.stand.name} ${widget.isShop ? '(Boutique)' : '(Stand)'}"),
         backgroundColor: Colors.blue,
         centerTitle: true,
         actions: [
@@ -233,15 +226,14 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
           return Column(
             children: [
               Center(
-                child: 
-                  Text(
-                    widget.stand.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                child: Text(
+                  widget.stand.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                ),// En-tête tableau
+                ),
+              ),
               Container(
                 color: Colors.blueAccent,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -266,7 +258,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                   ],
                 ),
               ),
-              // Lignes
               Expanded(
                 child: ListView.builder(
                   itemCount: docs.length,

@@ -34,9 +34,9 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
 
   @override
   Widget build(BuildContext context) {
-    final productsRef = productController.stockRef
+    final productsRef = productController.stockRefShop
         .doc(widget.shopId)
-        .collection('stockToulouse');
+        .collection('stock');
     return Scaffold(
       appBar: AppBar(
         title: Text("La Boutique - ${widget.shopName}"),
@@ -49,6 +49,7 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
               context,
               widget.shopId,
               widget.shopName,
+              isStand: false,
             ),
 
             tooltip: "Ajouter un produit",
@@ -223,11 +224,9 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
                                                       .trim();
                                                   if (newName.isNotEmpty) {
                                                     await productController
-                                                        .stockRef
+                                                        .stockRefShop
                                                         .doc(widget.shopId)
-                                                        .collection(
-                                                          'stockToulouse',
-                                                        )
+                                                        .collection('stock')
                                                         .doc(product.id)
                                                         .update({
                                                           'product': newName,

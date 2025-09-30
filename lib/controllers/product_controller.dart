@@ -5,13 +5,23 @@ import 'package:gestion_fournitures/models/shop_model.dart';
 
 class ProductController extends ChangeNotifier {
   final HistoryController historyController = HistoryController();
-  final CollectionReference stockRef = FirebaseFirestore.instance.collection(
-    'boutiques',
-  );
+
+  /// Collections Firestore
+  final CollectionReference stockRefShop =
+      FirebaseFirestore.instance.collection('boutiques');
+  final CollectionReference stockRefStands =
+      FirebaseFirestore.instance.collection('stands');
+
   List<ShopStandModel> listStock = [];
   late final BuildContext context;
+
   String? shopId;
   String? shopName;
+
+  /// Récupérer la bonne référence Firestore
+  CollectionReference getStockRef(bool isStand) {
+    return isStand ? stockRefStands : stockRefShop;
+  }
 
   /// Supprimer un produit avec confirmation
   Future<void> confirmDelete(
@@ -19,8 +29,9 @@ class ProductController extends ChangeNotifier {
     String shopId,
     String shopName,
     String productId,
-    String productName,
-  ) async {
+    String productName, {
+    bool isStand = false,
+  }) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -33,9 +44,9 @@ class ProductController extends ChangeNotifier {
           ),
           ElevatedButton(
             onPressed: () async {
-              await stockRef
+              await getStockRef(isStand)
                   .doc(shopId)
-                  .collection('stockToulouse')
+                  .collection('stock')
                   .doc(productId)
                   .delete();
 
@@ -67,24 +78,24 @@ class ProductController extends ChangeNotifier {
     String shopName,
     String productId,
     String key,
-    String value,
-  ) async {
+    String value, {
+    bool isStand = false,
+  }) async {
     int parsedValue = int.tryParse(value) ?? 0;
-    final docRef = stockRef
+    final docRef = getStockRef(isStand)
         .doc(shopId)
-        .collection('stockToulouse')
+        .collection('stock')
         .doc(productId);
+
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
       if (!snapshot.exists) return;
 
       final data = snapshot.data() as Map<String, dynamic>;
-      final quantite = key == 'quantite'
-          ? parsedValue
-          : (data['quantite'] ?? 0);
-      final consommer = key == 'consommer'
-          ? parsedValue
-          : (data['consommer'] ?? 0);
+      final quantite =
+          key == 'quantite' ? parsedValue : (data['quantite'] ?? 0);
+      final consommer =
+          key == 'consommer' ? parsedValue : (data['consommer'] ?? 0);
       final reste = quantite - consommer;
       final commande = reste < 10 ? "⚠️" : "✅";
 
@@ -94,6 +105,7 @@ class ProductController extends ChangeNotifier {
         'reste': reste,
         'commande': commande,
       });
+
       await historyController.addHistory(
         action: 'modification',
         product: data['product'] ?? '',
@@ -103,47 +115,66 @@ class ProductController extends ChangeNotifier {
       );
     });
   }
+
   /// Modifier le nom du produit
-  void modifierNomProduit(int index) {
-    final controller = TextEditingController(text: listStock[index].product);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Modifier le produit"),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: "Nom du produit"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                await stockRef.doc(listStock[index].id).update({
-                  'product': newName,
-                });
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Produit modifié ✅")),
-                );
-              }
-            },
-            child: const Text("Modifier"),
-          ),
-        ],
+  void modifierNomProduit(
+  BuildContext context, // 🔹 on passe le context ici
+  int index,
+  String shopId,
+  String shopName, {
+  bool isStand = false,
+}) {
+  final controller = TextEditingController(text: listStock[index].product);
+
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text("Modifier le produit"),
+      content: TextField(
+        controller: controller,
+        decoration: const InputDecoration(labelText: "Nom du produit"),
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Annuler"),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final newName = controller.text.trim();
+            if (newName.isNotEmpty) {
+              await getStockRef(isStand) // 🔹 true si stand
+                  .doc(shopId)
+                  .collection('stock')
+                  .doc(listStock[index].id)
+                  .update({'product': newName});
+
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Produit modifié ✅")),
+              );
+            }
+          },
+          child: const Text("Modifier"),
+        ),
+      ],
+    ),
+  );
+}
+
+
   /// Ajouter un produit
-  void addProductDialog(BuildContext context, String shopId, String shopName) {
+  void addProductDialog(
+    BuildContext context,
+    String shopId,
+    String shopName, {
+    bool isStand = false,
+  }) {
     final nameController = TextEditingController();
     final quantiteController = TextEditingController();
     final consommerController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -177,6 +208,7 @@ class ProductController extends ChangeNotifier {
               final name = nameController.text.trim();
               final quantite = int.tryParse(quantiteController.text) ?? 0;
               final consommer = int.tryParse(consommerController.text) ?? 0;
+
               if (name.isNotEmpty) {
                 final newProduct = ShopStandModel(
                   id: '',
@@ -186,10 +218,12 @@ class ProductController extends ChangeNotifier {
                   reste: quantite - consommer,
                   commande: (quantite - consommer) < 10 ? "⚠️" : "✅",
                 );
-                await stockRef
+
+                await getStockRef(isStand)
                     .doc(shopId)
-                    .collection('stockToulouse')
+                    .collection('stock')
                     .add(newProduct.toMap());
+
                 await historyController.addHistory(
                   action: 'création',
                   product: name,
@@ -197,6 +231,7 @@ class ProductController extends ChangeNotifier {
                   reste: quantite - consommer,
                   shopName: shopName,
                 );
+
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
