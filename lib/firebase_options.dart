@@ -66,7 +66,7 @@ class DefaultFirebaseOptions {
     projectId: 'gestionfournitures-2e8db',
     databaseURL: 'https://gestionfournitures-2e8db-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'gestionfournitures-2e8db.firebasestorage.app',
-    iosBundleId: 'com.example.gestionFournitures',
+    iosBundleId: 'com.web82orta.gestionfourniture',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,7 +76,7 @@ class DefaultFirebaseOptions {
     projectId: 'gestionfournitures-2e8db',
     databaseURL: 'https://gestionfournitures-2e8db-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'gestionfournitures-2e8db.firebasestorage.app',
-    iosBundleId: 'com.example.gestionFournitures',
+    iosBundleId: 'com.web82orta.gestionfourniture',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
