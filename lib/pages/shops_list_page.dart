@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'package:gestion_fournitures/pages/shop_details_page.dart';
 
 class ShopsListPage extends StatelessWidget {
@@ -8,9 +9,17 @@ class ShopsListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shopRef = FirebaseFirestore.instance.collection('boutiques');
+    final ShopStandController shopStandController = ShopStandController();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Les Boutiques")),
+      appBar: AppBar(
+        title: const Text("Les Boutiques"),
+        backgroundColor: Colors.blue,
+        actions: [
+          IconButton(onPressed: () => shopStandController.addBoutiqueDialog(context),
+          icon: Icon(Icons.add))
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: shopRef.snapshots(),
         builder: (context, snapshot) {
