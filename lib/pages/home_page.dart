@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
 import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
@@ -92,7 +93,12 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
+            onPressed: () => {
+              FirebaseAuth.instance.signOut(),
+              Navigator.of(
+                context,
+              ).pushReplacement(MaterialPageRoute(builder: (_) => AuthPage())),
+            },
           ),
         ],
       ),
