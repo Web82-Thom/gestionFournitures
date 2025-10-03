@@ -4,6 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ShopStandController extends ChangeNotifier {
   final CollectionReference standsRef = FirebaseFirestore.instance.collection('stands');
   final CollectionReference boutiquesRef = FirebaseFirestore.instance.collection('boutiques');
+  
+  /// Récupérer la bonne référence Firestore
+  CollectionReference getRef(bool isStand) {
+    return isStand ? standsRef : boutiquesRef;
+  }
   /// 🔹 Ajouter un stand
   void addStandDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -33,7 +38,7 @@ class ShopStandController extends ChangeNotifier {
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Stand ajouté ✅")),
+                  const SnackBar(content: Text("Ajouter ✅")),
                 );
               }
             },
@@ -78,6 +83,41 @@ class ShopStandController extends ChangeNotifier {
               }
             },
             child: const Text("Ajouter"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Supprimer une boutique ou stand avec confirmation
+  Future<void> confirmDelete(
+    BuildContext context,
+    String shopId,{
+    bool isStand = false,
+  }) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text((isStand ? "Supprimer le stand ?" : "Supprimer la boutique ?")),
+        content: Text((isStand ? "Êtes-vous sûr de vouloir supprimer ce stand ?" : "Êtes-vous sûr de vouloir supprimer cette boutique ?")),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await getRef(isStand)
+                  .doc(shopId)
+                  .delete();
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text((isStand ?"Stand supprimé ✅": "Boutique supprimée ✅"))),
+              );
+            },
+            child: const Text("Supprimer"),
           ),
         ],
       ),
