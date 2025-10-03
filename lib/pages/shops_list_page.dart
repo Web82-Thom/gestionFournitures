@@ -47,7 +47,10 @@ class ShopsListPage extends StatelessWidget {
                 final shopId = shop.id;
                 final shopName = (shop['name'] ?? 'Boutique').toString();
 
-                return GestureDetector(
+                return InkWell(
+                  onLongPress: () {
+                    shopStandController.confirmDelete(context, shopId, isStand: false);
+                  },
                   onTap: () {
                     Navigator.push(
                       context,

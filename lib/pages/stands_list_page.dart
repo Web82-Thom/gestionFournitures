@@ -46,7 +46,10 @@ class StandsPage extends StatelessWidget {
                 final standId = stand.id;
                 final standName = (stand['name'] ?? 'Stand').toString();
 
-                return GestureDetector(
+                return InkWell(
+                  onLongPress: () {
+                    shopStandController.confirmDelete(context, standId, isStand: true);
+                  },
                   onTap: () {
                     Navigator.push(
                       context,
