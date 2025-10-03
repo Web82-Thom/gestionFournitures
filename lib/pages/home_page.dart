@@ -17,7 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  String nickname = 'utilisateur';
+  String nickname = '';
 
   @override
   void initState() {
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bienvenue $nickname !'),
+        title: Text('Bienvenue $nickname!'),
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
