@@ -4,7 +4,7 @@ import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'package:gestion_fournitures/pages/shop_details_page.dart';
 
 class ShopsListPage extends StatelessWidget {
-  const ShopsListPage({Key? key}) : super(key: key);
+  const ShopsListPage({super.key});
 
   @override
   Widget build(BuildContext context) {

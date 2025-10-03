@@ -39,7 +39,6 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       // Ignore les erreurs, on garde le nickname par défaut
-      print('Erreur récupération nickname : $e');
     }
   }
 

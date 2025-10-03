@@ -28,10 +28,10 @@ class HistoryModel {
       id: doc.id,
       user: data['user'] ?? 'inconnu',
       action: data['action'] ?? '',
-      product: data['product'] ?? '',   // ✅ correspond au champ Firestore
+      product: data['product'] ?? '', // ✅ correspond au champ Firestore
       reste: data['reste'] ?? 0,
-      shop: data['shopName'] ?? '',     // ✅ correspond à shopName
-      stand: data['standName'] ?? '',   // ✅ correspond à standName
+      shop: data['shopName'] ?? '', // ✅ correspond à shopName
+      stand: data['standName'] ?? '', // ✅ correspond à standName
       date: (data['date'] as Timestamp?)?.toDate(),
     );
   }

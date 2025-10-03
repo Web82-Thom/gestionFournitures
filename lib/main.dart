@@ -16,6 +16,8 @@ void main() async{
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -39,7 +41,9 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatelessWidget {
-  @override
+  const AuthWrapper({super.key});
+
+@override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: AuthService().authStateChanges,

@@ -25,8 +25,12 @@ class _StandDetailPageState extends State<StandDetailsPage> {
 
   @override
   void dispose() {
-    for (var c in _quantiteControllers) c.dispose();
-    for (var c in _consoControllers) c.dispose();
+    for (var c in _quantiteControllers) {
+      c.dispose();
+    }
+    for (var c in _consoControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
