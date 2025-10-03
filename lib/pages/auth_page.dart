@@ -4,6 +4,8 @@ import 'package:gestion_fournitures/services/auth_service.dart';
 import 'home_page.dart';
 
 class AuthPage extends StatefulWidget {
+  const AuthPage({super.key});
+
   @override
   _AuthPageState createState() => _AuthPageState();
 }

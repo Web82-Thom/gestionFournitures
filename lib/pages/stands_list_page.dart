@@ -4,7 +4,7 @@ import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'stand_details_page.dart';
 
 class StandsPage extends StatelessWidget {
-  const StandsPage({Key? key}) : super(key: key);
+  const StandsPage({super.key});
 
   @override
   Widget build(BuildContext context) {

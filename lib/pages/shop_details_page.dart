@@ -8,8 +8,7 @@ class LaBoutiquePage extends StatefulWidget {
   final String shopId;
   final String shopName;
 
-  const LaBoutiquePage({Key? key, required this.shopId, required this.shopName})
-    : super(key: key);
+  const LaBoutiquePage({super.key, required this.shopId, required this.shopName});
 
   @override
   State<LaBoutiquePage> createState() => ShopDetailsPage();
@@ -22,6 +21,7 @@ class ShopDetailsPage extends State<LaBoutiquePage> {
   List<TextEditingController> _quantiteControllers = [];
   List<TextEditingController> _consoControllers = [];
 
+  @override
   void dispose() {
     for (var c in _quantiteControllers) {
       c.dispose();
