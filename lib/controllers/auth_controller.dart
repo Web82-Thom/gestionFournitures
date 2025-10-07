@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+// import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 import 'package:gestion_fournitures/pages/home_page.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
 
@@ -16,7 +17,9 @@ class AuthController extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final nicknameController = TextEditingController();
+  late TextEditingController nicknameController = TextEditingController();
+  String nickname = '';
+  String role = '';
   bool obscureText = true;
 
   String? selectedRole;
@@ -36,19 +39,6 @@ class AuthController extends ChangeNotifier {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService authService = AuthService();
-
-  // Charger boutiques depuis Firestore
-  Future<void> loadShops() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('boutiques')
-          .get();
-      shops = snapshot.docs.map((doc) => doc['name'] as String).toList();
-      notifyListeners();
-    } catch (e) {
-      print("Erreur loadShops: $e");
-    }
-  }
 
   /// Récupère la liste des boutiques et des stands depuis Firestore
   Future<void> fetchShopsAndStands() async {
@@ -83,64 +73,35 @@ class AuthController extends ChangeNotifier {
       print("Erreur loadStands: $e");
     }
   }
-
+  // Soumettre le formulaire de connexion ou d'inscription
   Future<void> submit(BuildContext context) async {
-  if (!formKey.currentState!.validate()) return;
+    if (!formKey.currentState!.validate()) return;
+    try {
+      if (isLogin) {
+        await authService.signIn(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+        );
+      } else {
+        await authService.signUp(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+          nickname: nicknameController.text.trim(),
+        );
+      }
 
-  // Validation spéciale selon le rôle
-  if ((selectedRole == 'Directeur de Boutique' || selectedRole == 'Chef de Boutique') &&
-    selectedShops.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Veuillez choisir une boutique")),
-  );
-  return;
-}
-
-  if (selectedRole == 'Chef de Stand' && selectedStands.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Veuillez choisir un stand")),
-  );
-  return;
-}
-
-  if (selectedRole == 'Collaborateur' && selectedShops.isEmpty && selectedStands.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Un collaborateur doit choisir au moins une boutique ou un stand")),
-  );
-  return;
-}
-
-  try {
-    if (isLogin) {
-      await authService.signIn(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
-    } else {
-      await authService.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-        nickname: nicknameController.text.trim(),
-        // role: selectedRole!,
-        // shop: selectedShops,
-        // stand: selectedStands,
-      );
+      if (!context.mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
     }
-
-    if (!context.mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => HomePage()),
-    );
-  } catch (e) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur : $e')),
-    );
   }
-}
-
-
-
+  // Réinitialiser le mot de passe
   Future<void> resetPassword(BuildContext context) async {
     if (emailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
