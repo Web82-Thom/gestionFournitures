@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +14,9 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-
   List<DocumentSnapshot> requests = [];
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   late TextEditingController _nicknameController;
-  File? _selectedImage;
 
   @override
   void initState() {
@@ -30,55 +27,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (widget.docId == currentUserId) fetchRequests();
   }
 
-  // Future<void> _pickImage() async {
-  //   final pickedFile = await ImagePicker().pickImage(
-  //     source: ImageSource.gallery,
-  //   );
-  //   if (pickedFile != null) {
-  //     setState(() => _selectedImage = File(pickedFile.path));
-  //   }
-  // }
-
   Future<void> _saveProfile() async {
-    final updateData = {'nickname': _nicknameController.text};
-    if (_selectedImage != null) {
-      updateData['photoPath'] = _selectedImage!.path;
-    }
+    final newNickname = _nicknameController.text.trim();
+    if (newNickname.isEmpty) return;
+
     await FirebaseFirestore.instance
         .collection('users')
         .doc(widget.docId)
-        .update(updateData);
-    Navigator.pop(context);
+        .update({'nickname': newNickname});
+
+    // 🔹 Actualiser le texte de l'AppBar
+    setState(() {
+      widget.user['nickname'] = newNickname;
+    });
   }
 
   void fetchRequests() async {
     var snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserId)
-        .collection('friendRequests')
-        .where('status', isEqualTo: 'pending')
         .get();
 
     setState(() {
-      requests = snapshot.docs;
+      requests = snapshot.exists ? [snapshot] : [];
     });
-  }
-
-  Future<void> deleteFirebaseUser() async {
-    try {
-      await FirebaseAuth.instance.currentUser!.delete();
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
-        // Ici tu peux gérer la ré-authentification (exemple avec email/password)
-        throw Exception(
-          'Ré-authentification requise pour supprimer le compte.',
-        );
-      } else {
-        throw Exception(
-          'Erreur lors de la suppression du compte : ${e.message}',
-        );
-      }
-    }
   }
 
   Future<void> _deleteProfile() async {
@@ -153,13 +125,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 controller: _nicknameController,
                 readOnly: !isCurrentUser,
                 decoration: InputDecoration(labelText: 'Surnom'),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => {if (isCurrentUser) _saveProfile()},
               ),
             ),
-            if (isCurrentUser)
-              ElevatedButton(
-                onPressed: _saveProfile,
-                child: Text('Enregistrer les modifications'),
-              ),
+            SizedBox(height: 20),
+            Text('Email: ${widget.user['email'] ?? 'N/A'}'),
+            SizedBox(height: 20),
+            Text('Rôle: ${widget.user['role'] ?? 'N/A'}'),
+            SizedBox(height: 20),
+            Text(
+              'Affiliations:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text('Boutiques: ${(widget.user['shopIds'] as List<dynamic>?)?.join(', ') ?? 'Aucune'}'),
+            SizedBox(height: 20),
+            Text('Stands: ${(widget.user['standIds'] as List<dynamic>?)?.join(', ') ?? 'Aucun'}'),
+            SizedBox(height: 20),
+            if (isCurrentUser) 
+            ElevatedButton(
+              onPressed: _saveProfile,
+              child: Text('Enregistrer les modifications'),
+            ),
           ],
         ),
       ),
