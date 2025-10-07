@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/pages/auth_page.dart';
+import 'package:gestion_fournitures/pages/collaborators_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
 import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
@@ -18,6 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   String nickname = '';
+  String role = '';
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _HomePageState extends State<HomePage> {
       if (doc.exists && doc.data() != null) {
         setState(() {
           nickname = doc.data()!['nickname'] ?? 'Utilisateur';
+          role = doc.data()!['role'];
         });
       }
     } catch (e) {
@@ -81,6 +84,13 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAdminOrManager = [
+      'Admin',
+      'Directeur Général',
+      'Directeur de boutique',
+      'Chef de boutique',
+    ].contains(role);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Bienvenue $nickname!'),
@@ -212,6 +222,38 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+          if (isAdminOrManager) ...[
+            Card(
+              margin: EdgeInsets.all(20),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CollaboratorsPage(),
+                    ),
+                  );
+                },
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings,
+                        size: 70,
+                        color: Colors.deepPurple,
+                      ),
+                      Text(
+                        'Collaborateurs',
+                        style: TextStyle(fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
