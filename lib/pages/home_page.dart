@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final bool isAdminOrManager = [
-      'Admin',
+      'Administrateur',
       'Directeur Général',
       'Directeur de boutique',
       'Chef de boutique',
