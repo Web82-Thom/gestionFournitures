@@ -145,7 +145,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
             SizedBox(height: 20),
             if (isCurrentUser) 
             ElevatedButton(
-              onPressed: _saveProfile,
+              onPressed: () => {
+                _saveProfile,
+                Navigator.of(context).pop(true),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Profil mis à jour')),
+                  
+                ),
+              },
               child: Text('Enregistrer les modifications'),
             ),
           ],

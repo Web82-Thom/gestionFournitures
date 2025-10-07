@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:gestion_fournitures/pages/profil_user.dart';
+import 'package:gestion_fournitures/pages/collaborator_details_page.dart';
 
 class CollaboratorsPage extends StatelessWidget {
   CollaboratorsPage({super.key});
@@ -36,7 +36,7 @@ class CollaboratorsPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ProfilUser(user: data, docId: user.id),
+                      builder: (_) => CollaboratorDetailsPage(user: data, docId: user.id),
                     ),
                   );
                 },

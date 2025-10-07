@@ -46,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void openOwnProfile(BuildContext context) async {
+    print(' Ouverture du profil de l\'utilisateur courant');
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,34 +115,36 @@ class _HomePageState extends State<HomePage> {
       body: GridView.count(
         crossAxisCount: 2,
         children: [
-          Card(
-            margin: EdgeInsets.all(20),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TurnoversPage()),
-                );
-              },
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.monetization_on_outlined,
-                      size: 70,
-                      color: Colors.deepPurple,
-                    ),
-                    Text(
-                      'Chiffres d\'affaires',
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+          if (isAdminOrManager) ... [
+            Card(
+              margin: EdgeInsets.all(20),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TurnoversPage()),
+                  );
+                },
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.monetization_on_outlined,
+                        size: 70,
+                        color: Colors.deepPurple,
+                      ),
+                      Text(
+                        'Chiffres d\'affaires',
+                        style: TextStyle(fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
           Card(
             margin: EdgeInsets.all(20),
             child: InkWell(
