@@ -13,12 +13,14 @@ class AuthService {
       throw Exception(e.message);
     }
   }
-
   // Inscription avec nickname
-  Future<User?> signUp({
+  Future<UserCredential> signUp({
     required String email,
     required String password,
-    String? nickname,
+    String? nickname, 
+    String? role, 
+    String? shop, 
+    String? stand,
   }) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
@@ -29,11 +31,13 @@ class AuthService {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'email': email,
           'nickname': nickname ?? '',
+          'role': role ?? 'Collaborateur',
+          'shopIds': shop ?? [],
+          'standIds': stand ?? [],
           'createdAt': FieldValue.serverTimestamp(),
         });
       }
-
-      return user;
+      return credential;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);
     }

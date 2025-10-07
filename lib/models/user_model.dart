@@ -36,7 +36,7 @@ class UserModel {
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
       nickname: map['nickname'] ?? '',
-      role: map['role'] ?? 'associe',
+      role: map['role'] ?? 'Collaborateur',
       shopIds: List<String>.from(map['shopIds'] ?? []),
       standIds: List<String>.from(map['standIds'] ?? []),
       createdAt: map['createdAt'] != null

@@ -14,7 +14,6 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-
   List<DocumentSnapshot> requests = [];
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   late TextEditingController _nicknameController;
@@ -29,22 +28,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _saveProfile() async {
-  final newNickname = _nicknameController.text.trim();
-  if (newNickname.isEmpty) return;
+    final newNickname = _nicknameController.text.trim();
+    if (newNickname.isEmpty) return;
 
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.docId)
-      .update({'nickname': newNickname});
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.docId)
+        .update({'nickname': newNickname});
 
-  // 🔹 Actualiser le texte de l'AppBar
-  setState(() {
-    widget.user['nickname'] = newNickname;
-  });
-
-  
-}
-
+    // 🔹 Actualiser le texte de l'AppBar
+    setState(() {
+      widget.user['nickname'] = newNickname;
+    });
+  }
 
   void fetchRequests() async {
     var snapshot = await FirebaseFirestore.instance
@@ -130,16 +126,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 readOnly: !isCurrentUser,
                 decoration: InputDecoration(labelText: 'Surnom'),
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => {
-                  if (isCurrentUser) _saveProfile(),
-                },
+                onSubmitted: (_) => {if (isCurrentUser) _saveProfile()},
               ),
             ),
-            if (isCurrentUser)
-              ElevatedButton(
-                onPressed: _saveProfile,
-                child: Text('Enregistrer les modifications'),
-              ),
+            SizedBox(height: 20),
+            Text('Email: ${widget.user['email'] ?? 'N/A'}'),
+            SizedBox(height: 20),
+            Text('Rôle: ${widget.user['role'] ?? 'N/A'}'),
+            SizedBox(height: 20),
+            Text(
+              'Affiliations:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text('Boutiques: ${(widget.user['shopIds'] as List<dynamic>?)?.join(', ') ?? 'Aucune'}'),
+            SizedBox(height: 20),
+            Text('Stands: ${(widget.user['standIds'] as List<dynamic>?)?.join(', ') ?? 'Aucun'}'),
+            SizedBox(height: 20),
+            if (isCurrentUser) 
+            ElevatedButton(
+              onPressed: _saveProfile,
+              child: Text('Enregistrer les modifications'),
+            ),
           ],
         ),
       ),
