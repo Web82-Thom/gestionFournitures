@@ -7,7 +7,6 @@ import 'package:gestion_fournitures/pages/collaborators_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
 import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
-import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 import 'package:gestion_fournitures/pages/shops_list_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -49,43 +48,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void openOwnProfile(BuildContext context) async {
-    print(' Ouverture du profil de l\'utilisateur courant');
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Aucun utilisateur connecté")),
-      );
-      return;
-    }
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
-    if (!doc.exists) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Profil introuvable")));
-      return;
-    }
-
-    final userData = doc.data();
-
-    if (userData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Erreur lors de la récupération des données"),
-        ),
-      );
-      return;
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditProfilePage(user: userData, docId: currentUser.uid),
-      ),
-    );
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +67,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.account_circle),
-            onPressed: () => openOwnProfile(context),
+            onPressed: () => authController.openOwnProfile(context),
           ),
           IconButton(
             icon: Icon(Icons.logout),
