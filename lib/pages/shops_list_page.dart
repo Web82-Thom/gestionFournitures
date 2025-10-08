@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
+import 'package:gestion_fournitures/controllers/auth_controller.dart';
+import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'package:gestion_fournitures/pages/shop_details_page.dart';
 
 class ShopsListPage extends StatelessWidget {
@@ -10,14 +13,28 @@ class ShopsListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final shopRef = FirebaseFirestore.instance.collection('boutiques');
     final ShopStandController shopStandController = ShopStandController();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final authController = AuthController();
+
+    // Rôle de l’utilisateur
+    final String role = authController.role;
+    final bool isAdmin = role == 'Administrateur';
+
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text("Aucun utilisateur connecté")),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Les Boutiques"),
         backgroundColor: Colors.blue,
         actions: [
-          IconButton(onPressed: () => shopStandController.addBoutiqueDialog(context),
-          icon: Icon(Icons.add))
+          IconButton(
+            onPressed: () => shopStandController.addBoutiqueDialog(context),
+            icon: const Icon(Icons.add),
+          ),
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -36,10 +53,10 @@ class ShopsListPage extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,          // 2 colonnes (mobile)
-                childAspectRatio: 1.2,      // ajuster la taille des cartes
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                crossAxisCount: 2,
+                childAspectRatio: 1,
+                crossAxisSpacing: 1,
+                mainAxisSpacing: 1,
               ),
               itemCount: shops.length,
               itemBuilder: (context, index) {
@@ -47,48 +64,26 @@ class ShopsListPage extends StatelessWidget {
                 final shopId = shop.id;
                 final shopName = (shop['name'] ?? 'Boutique').toString();
 
-                return InkWell(
-                  onLongPress: () {
-                    shopStandController.confirmDelete(context, shopId, isStand: false);
-                  },
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => LaBoutiquePage(
-                          shopId: shopId,
-                          shopName: shopName,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Container(
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.shade200, Colors.blue.shade400],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        shopName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                return BuildCardWidget(
+                  icon: Icons.store_mall_directory_rounded,
+                  label: shopName,
+                  page: ShopDetailsPage(
+                    shopId: shopId,
+                    shopName: shopName,
                   ),
+                  backgroundColor: Colors.blue.shade300,
+                  iconColor: Colors.white,
+                  fontSize: 14,
+                  iconSize: 50,
+                  onLongPress: isAdmin
+                      ? () {
+                          shopStandController.confirmDelete(
+                            context,
+                            shopId,
+                            isStand: false,
+                          );
+                        }
+                      : null,
                 );
               },
             ),

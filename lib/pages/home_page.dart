@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/collaborators_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
@@ -15,6 +16,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
+    AuthController authController = AuthController();
 
     if (currentUser == null) {
       return const Scaffold(
@@ -58,7 +60,7 @@ class HomePage extends StatelessWidget {
           {
             'icon': Icons.storefront_outlined,
             'label': 'Stock des stands',
-            'page': const StandsPage(),
+            'page': StandsListPage(),
           },
           {
             'icon': Icons.store_mall_directory_rounded,
@@ -84,6 +86,10 @@ class HomePage extends StatelessWidget {
             backgroundColor: Colors.blue,
             actions: [
               IconButton(
+                icon: const Icon(Icons.account_circle),
+                onPressed: () => authController.openOwnProfile(context),
+              ),
+              IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () async {
                   await FirebaseAuth.instance.signOut();
@@ -101,9 +107,9 @@ class HomePage extends StatelessWidget {
               label: card['label'],
               page: card['page'],
               backgroundColor: Colors.orangeAccent,
-              fontSize: 10,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              padding: const EdgeInsets.all(5)  ,
+              padding: const EdgeInsets.all(5),
             )).toList(),
           ),
         );

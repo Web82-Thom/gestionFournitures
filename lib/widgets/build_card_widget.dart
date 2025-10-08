@@ -11,6 +11,7 @@ class BuildCardWidget extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final double borderRadius;
   final FontWeight fontWeight;
+  final VoidCallback? onLongPress;
 
   const BuildCardWidget({
     Key? key,
@@ -24,6 +25,7 @@ class BuildCardWidget extends StatelessWidget {
     this.padding = const EdgeInsets.all(12),
     this.borderRadius = 12,
     this.fontWeight = FontWeight.bold,
+    this.onLongPress,
   }) : super(key: key);
 
   @override
@@ -39,6 +41,7 @@ class BuildCardWidget extends StatelessWidget {
           context,
           MaterialPageRoute(builder: (_) => page),
         ),
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(borderRadius),
         child: Padding(
           padding: padding,

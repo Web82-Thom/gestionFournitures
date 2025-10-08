@@ -1,99 +1,108 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
+import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'stand_details_page.dart';
 
-class StandsPage extends StatelessWidget {
-  const StandsPage({super.key});
+class StandsListPage extends StatelessWidget {
+  StandsListPage({super.key});
+
+  final AuthController authController = AuthController();
 
   @override
   Widget build(BuildContext context) {
     final standsRef = FirebaseFirestore.instance.collection('stands');
-    final ShopStandController shopStandController = ShopStandController();  
+    final ShopStandController shopStandController = ShopStandController();
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Stands"),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(onPressed: () => shopStandController.addStandDialog(context),
-          icon: const Icon(Icons.add))
-        ],),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: standsRef.snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("Aucun stand trouvé"));
-          }
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text("Aucun utilisateur connecté")),
+      );
+    }
 
-          final stands = snapshot.data!.docs;
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .snapshots(),
+      builder: (context, userSnapshot) {
+        if (!userSnapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          return Padding(
-            padding: const EdgeInsets.all(12),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,          // 2 colonnes (mobile)
-                childAspectRatio: 1.2,      // ajuster la taille des cartes
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+        final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+        final role = userData?['role'] ?? '';
+        final bool isAdmin = role == 'Administrateur';
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Stands"),
+            backgroundColor: Colors.blue,
+            actions: [
+              IconButton(
+                onPressed: () => shopStandController.addStandDialog(context),
+                icon: const Icon(Icons.add),
               ),
-              itemCount: stands.length,
-              itemBuilder: (context, index) {
-                final stand = stands[index];
-                final standId = stand.id;
-                final standName = (stand['name'] ?? 'Stand').toString();
+            ],
+          ),
+          body: StreamBuilder<QuerySnapshot>(
+            stream: standsRef.snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text("Aucun stand trouvé"));
+              }
 
-                return InkWell(
-                  onLongPress: () {
-                    shopStandController.confirmDelete(context, standId, isStand: true);
-                  },
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StandDetailsPage(
-                          standId: standId,
-                          standName: standName,
-                        ),
+              final stands = snapshot.data!.docs;
+
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 1,
+                    mainAxisSpacing: 1,
+                  ),
+                  itemCount: stands.length,
+                  itemBuilder: (context, index) {
+                    final stand = stands[index];
+                    final standId = stand.id;
+                    final standName = (stand['name'] ?? 'Stand').toString();
+
+                    return BuildCardWidget(
+                      icon: Icons.storefront_outlined,
+                      label: standName,
+                      page: StandDetailsPage(
+                        standId: standId,
+                        standName: standName,
                       ),
+                      backgroundColor: Colors.blue.shade300,
+                      fontSize: 14,
+                      iconSize: 40,
+                      onLongPress: isAdmin? () async {
+                        await shopStandController.confirmDelete(
+                          context,
+                          standId,
+                          isStand: true,
+                        );
+                      }
+                      : null,
                     );
                   },
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Container(
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.shade200, Colors.blue.shade400],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        standName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

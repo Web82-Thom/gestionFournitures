@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/stand_model.dart';
+import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'turnover_table_page.dart';
 
 class TurnoversPage extends StatelessWidget {
@@ -66,43 +67,25 @@ class TurnoversPage extends StatelessWidget {
                   itemCount: items.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 1.2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    childAspectRatio: 1,
+                    crossAxisSpacing: 1,
+                    mainAxisSpacing: 1,
                   ),
                   itemBuilder: (context, index) {
                     final item = items[index];
                     final isShop = index < boutiques.length; // 🔹 Les premières sont des boutiques
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TurnoverTablePage(
-                              stand: item,
-                              isShop: isShop,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        color: isShop ? Colors.green.shade200 : Colors.blue.shade200,
-                        child: Center(
-                          child: Text(
-                            item.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                    return BuildCardWidget(
+                      icon: isShop ? Icons.store_mall_directory_rounded : Icons.storefront_outlined,
+                      label: item.name,
+                      padding: const EdgeInsets.all(5),
+                      page: TurnoverTablePage(
+                        stand: item,
+                        isShop: isShop,
                       ),
+                      backgroundColor: isShop ? Colors.green.shade200 : Colors.blue.shade200,
+                      iconSize: 50,
+                      fontSize: 14,
                     );
                   },
                 );
