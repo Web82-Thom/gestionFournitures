@@ -12,8 +12,51 @@ class CollaboratorController extends ChangeNotifier{
   TextEditingController nicknameController = TextEditingController();
   List<DocumentSnapshot> requests = [];
   CollaboratorController(this.user, this.docId);
+  String nickname = '';
+  String role = '';
 
-  
+  String nicknameLoad = '';
+  String roleLoad = '';
+  Future<void> loadNickname() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser?.uid)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        
+          nicknameLoad = doc.data()!['nickname'] ?? 'Utilisateur';
+          roleLoad = doc.data()!['role'];
+          notifyListeners(); // 🔁 utile si tu utilises Provider
+      }
+    } catch (e) {
+      // Ignore les erreurs, on garde le nickname par défaut
+    }
+  }
+  /// Récupère les données de l'utilisateur courant depuis Firestore
+  Future<Map<String, dynamic>?> fetchUserData() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data()!;
+      nickname = data['nickname'] ?? 'Utilisateur';
+      role = data['role'] ?? '';
+      notifyListeners(); // 🔁 utile si tu utilises Provider
+      return data;
+    }
+  } catch (e) {
+    debugPrint('Erreur fetchUserData: $e');
+  }
+  return null;
+}
   
   Future<void> openEditPage(BuildContext context) async {
     final result = await Navigator.push(

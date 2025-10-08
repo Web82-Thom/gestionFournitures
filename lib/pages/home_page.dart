@@ -9,235 +9,143 @@ import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
 import 'package:gestion_fournitures/pages/shops_list_page.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  AuthController authController = AuthController();
-  Future<void> get auth async => await authController.fetchUserData();
-  String nickname = '';
-  String role = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNickname();
-    authController.fetchUserData();
-  }
-
-  Future<void> _loadNickname() async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUserId)
-          .get();
-
-      if (doc.exists && doc.data() != null) {
-        setState(() {
-          nickname = doc.data()!['nickname'] ?? 'Utilisateur';
-          role = doc.data()!['role'];
-        });
-      }
-    } catch (e) {
-      // Ignore les erreurs, on garde le nickname par défaut
-    }
-  }
-
-  
-
-  @override
   Widget build(BuildContext context) {
-    final bool isAdminOrManager = [
-      'Administrateur',
-      'Directeur Général',
-      'Directeur de Boutique',
-      'Chef de Boutique',
-      'Chef de Stand',
-    ].contains(role);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final authController = AuthController();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Bienvenue $nickname!'),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.account_circle),
-            onPressed: () => authController.openOwnProfile(context),
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text("Aucun utilisateur connecté")),
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // 🕐 Si les données sont encore en chargement
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // ✅ Si on a les données de l’utilisateur
+        final userData = snapshot.data!.data() as Map<String, dynamic>?;
+
+        final nickname = userData?['nickname'] ?? 'Utilisateur';
+        final role = userData?['role'] ?? '';
+
+        final bool isAdminOrManager = [
+          'Administrateur',
+          'Directeur Général',
+          'Directeur de Boutique',
+          'Chef de Boutique',
+          'Chef de Stand',
+        ].contains(role);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Bienvenue $nickname!'),
+            backgroundColor: Colors.blue,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.account_circle),
+                onPressed: () => authController.openOwnProfile(context),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const AuthPage()),
+                  );
+                },
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => {
-              FirebaseAuth.instance.signOut(),
-              Navigator.of(
+          body: GridView.count(
+            crossAxisCount: 2,
+            children: [
+              if (isAdminOrManager) ...[
+                _buildCard(
+                  context,
+                  icon: Icons.monetization_on_outlined,
+                  label: 'Chiffres d\'affaires',
+                  page: const TurnoversPage(),
+                ),
+              ],
+              _buildCard(
                 context,
-              ).pushReplacement(MaterialPageRoute(builder: (_) => AuthPage())),
-            },
+                icon: Icons.storefront_outlined,
+                label: 'Stock des stands',
+                page: const StandsPage(),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.store_mall_directory_rounded,
+                label: 'Stock des boutiques',
+                page: const ShopsListPage(),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.history_edu_sharp,
+                label: 'Historiques',
+                page: const HistoriesPage(),
+              ),
+              if (isAdminOrManager) ...[
+                _buildCard(
+                  context,
+                  icon: Icons.admin_panel_settings,
+                  label: 'Collaborateurs',
+                  page: CollaboratorsPage(),
+                ),
+              ],
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(BuildContext context,
+    {required IconData icon, required String label, required Widget page}) {
+  return Card(
+    margin: const EdgeInsets.all(20),
+    child: InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => page),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          final data = await authController.fetchUserData();
-          if (data != null && mounted) {
-            setState(() {
-              nickname = data['nickname'] ?? nickname;
-              role = data['role'] ?? role;
-            });
-          }
-        },
-        child: GridView.count(
-          crossAxisCount: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0), // 👈 ajoute de l’espace interne
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // 👈 centre verticalement
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (isAdminOrManager) ...[
-              Card(
-                margin: EdgeInsets.all(20),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => TurnoversPage()),
-                    );
-                  },
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.monetization_on_outlined,
-                          size: 70,
-                          color: Colors.deepPurple,
-                        ),
-                        Text(
-                          'Chiffres d\'affaires',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            Card(
-              margin: EdgeInsets.all(20),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => StandsPage()),
-                  );
-                },
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.storefront_outlined,
-                        size: 70,
-                        color: Colors.deepPurple,
-                      ),
-                      Text(
-                        'Stock des stands',
-                        style: TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+            Flexible(
+              child: Icon(icon, size: 50, color: Colors.deepPurple),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis, // 👈 évite débordement texte
               ),
             ),
-            Card(
-              margin: EdgeInsets.all(20),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ShopsListPage()),
-                  );
-                },
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.store_mall_directory_rounded,
-                        size: 70,
-                        color: Colors.deepPurple,
-                      ),
-                      Text(
-                        'Stock des boutiques',
-                        style: TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Card(
-              margin: EdgeInsets.all(20),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HistoriesPage()),
-                  );
-                },
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.history_edu_sharp,
-                        size: 70,
-                        color: Colors.deepPurple,
-                      ),
-                      Text('Historiques', style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (isAdminOrManager) ...[
-              Card(
-                margin: EdgeInsets.all(20),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CollaboratorsPage(),
-                      ),
-                    );
-                  },
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.admin_panel_settings,
-                          size: 70,
-                          color: Colors.deepPurple,
-                        ),
-                        Text(
-                          'Collaborateurs',
-                          style: TextStyle(fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
