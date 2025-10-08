@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 // import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 import 'package:gestion_fournitures/pages/home_page.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
@@ -25,9 +26,9 @@ class AuthController extends ChangeNotifier {
   String? selectedRole;
   List<String> selectedShops = [];
   List<String> selectedStands = [];
-
+  Map<String, dynamic> user = {};
   List<String> roles = [
-    'Administateur',
+    'Administrateur',
     'Directeur Général',
     'Directeur de Boutique',
     'Chef de Boutique',
@@ -39,6 +40,68 @@ class AuthController extends ChangeNotifier {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService authService = AuthService();
+  
+  void openOwnProfile(BuildContext context) async {
+    print(' Ouverture du profil de l\'utilisateur courant');
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Aucun utilisateur connecté")),
+      );
+      return;
+    }
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    if (!doc.exists) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Profil introuvable")));
+      return;
+    }
+
+    final userData = doc.data();
+
+    if (userData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Erreur lors de la récupération des données"),
+        ),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(user: userData, docId: currentUser.uid),
+      ),
+    );
+  }
+  /// Récupère les données de l'utilisateur courant depuis Firestore
+  Future<Map<String, dynamic>?> fetchUserData() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data()!;
+      nickname = data['nickname'] ?? 'Utilisateur';
+      role = data['role'] ?? '';
+      notifyListeners(); // 🔁 utile si tu utilises Provider
+      return data;
+    }
+  } catch (e) {
+    debugPrint('Erreur fetchUserData: $e');
+  }
+  return null;
+}
+
 
   /// Récupère la liste des boutiques et des stands depuis Firestore
   Future<void> fetchShopsAndStands() async {
