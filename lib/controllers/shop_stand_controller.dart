@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ShopStandController extends ChangeNotifier {
   final CollectionReference standsRef = FirebaseFirestore.instance.collection('stands');
   final CollectionReference boutiquesRef = FirebaseFirestore.instance.collection('boutiques');
+  List<String> shops = [];
+  List<String> stands = [];
   
   /// Récupérer la bonne référence Firestore
   CollectionReference getRef(bool isStand) {
@@ -122,5 +124,39 @@ class ShopStandController extends ChangeNotifier {
         ],
       ),
     );
+  }
+
+  /// Récupère la liste des boutiques et des stands depuis Firestore
+  Future<void> fetchShopsAndStands() async {
+    try {
+      // Récupération des boutiques
+      final shopSnapshot = await FirebaseFirestore.instance
+          .collection('boutiques')
+          .get();
+      shops = shopSnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+      // Récupération des stands
+      final standSnapshot = await FirebaseFirestore.instance
+          .collection('stands')
+          .get();
+      stands = standSnapshot.docs.map((doc) => doc['name'] as String).toList();
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erreur fetchShopsAndStands: $e');
+    }
+  }
+
+  // Charger stands depuis Firestore
+  Future<void> loadStands() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('stands')
+          .get();
+      stands = snapshot.docs.map((doc) => doc['name'] as String).toList();
+      notifyListeners();
+    } catch (e) {
+      print("Erreur loadStands: $e");
+    }
   }
 }

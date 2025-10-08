@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/controllers/collaborator_controller.dart';
+import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'package:gestion_fournitures/pages/collaborators_page.dart';
 
 class EditCollaboratorPage extends StatefulWidget {
@@ -15,6 +16,7 @@ class EditCollaboratorPage extends StatefulWidget {
   State<EditCollaboratorPage> createState() => _EditCollaboratorPageState();
 }
 CollaboratorController collaboratorController = CollaboratorController({}, '');
+ShopStandController shopStandController = ShopStandController();
 
 class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
   final AuthController authController = AuthController();
@@ -33,7 +35,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
   }
 
   Future<void> _initData() async {
-    await authController.fetchShopsAndStands();
+    await shopStandController.fetchShopsAndStands();
     setState(() {
       authController.selectedRole = widget.user['role'] ?? '';
       authController.selectedShops = List<String>.from(
@@ -111,7 +113,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                         value: 'Aucune boutique',
                         child: Text('Aucune boutique'),
                       ),
-                      ...authController.shops.map((shop) {
+                      ...shopStandController.shops.map((shop) {
                         return DropdownMenuItem(value: shop, child: Text(shop));
                       }).toList(),
                     ],
@@ -133,7 +135,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                         value: 'aucun stand',
                         child: Text('Aucun stand'),
                       ),
-                      ...authController.stands.map((stand) {
+                      ...shopStandController.stands.map((stand) {
                         return DropdownMenuItem(
                           value: stand,
                           child: Text(stand),

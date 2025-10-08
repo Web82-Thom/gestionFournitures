@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/pages/edit_collaborator_page.dart';
 import 'package:gestion_fournitures/pages/edit_profile_page.dart';
-// import 'package:gestion_fournitures/pages/edit_profile_page.dart';
 import 'package:gestion_fournitures/pages/home_page.dart';
 import 'package:gestion_fournitures/services/auth_service.dart';
 
@@ -19,6 +19,8 @@ class AuthController extends ChangeNotifier {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   late TextEditingController nicknameController = TextEditingController();
+  final currentUser = FirebaseAuth.instance.currentUser;
+
   String nickname = '';
   String role = '';
   bool obscureText = true;
@@ -35,15 +37,13 @@ class AuthController extends ChangeNotifier {
     'Chef de Stand',
     'Collaborateur',
   ];
-  List<String> shops = [];
-  List<String> stands = [];
+  
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService authService = AuthService();
   
-  void openOwnProfile(BuildContext context) async {
-    print(' Ouverture du profil de l\'utilisateur courant');
-    final currentUser = FirebaseAuth.instance.currentUser;
+  /// Ouvre la page de modification du profil de l'utilisateur courant
+  Future<void> openOwnProfile(BuildContext context) async {
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Aucun utilisateur connecté")),
@@ -52,7 +52,7 @@ class AuthController extends ChangeNotifier {
     }
     final doc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(currentUser.uid)
+        .doc(currentUser!.uid)
         .get();
     if (!doc.exists) {
       ScaffoldMessenger.of(
@@ -74,67 +74,9 @@ class AuthController extends ChangeNotifier {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfilePage(user: userData, docId: currentUser.uid),
+        builder: (_) => EditProfilePage(user: userData, docId: currentUser!.uid),
       ),
     );
-  }
-  /// Récupère les données de l'utilisateur courant depuis Firestore
-  Future<Map<String, dynamic>?> fetchUserData() async {
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
-
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data()!;
-      nickname = data['nickname'] ?? 'Utilisateur';
-      role = data['role'] ?? '';
-      notifyListeners(); // 🔁 utile si tu utilises Provider
-      return data;
-    }
-  } catch (e) {
-    debugPrint('Erreur fetchUserData: $e');
-  }
-  return null;
-}
-
-
-  /// Récupère la liste des boutiques et des stands depuis Firestore
-  Future<void> fetchShopsAndStands() async {
-    try {
-      // Récupération des boutiques
-      final shopSnapshot = await FirebaseFirestore.instance
-          .collection('boutiques')
-          .get();
-      shops = shopSnapshot.docs.map((doc) => doc['name'] as String).toList();
-
-      // Récupération des stands
-      final standSnapshot = await FirebaseFirestore.instance
-          .collection('stands')
-          .get();
-      stands = standSnapshot.docs.map((doc) => doc['name'] as String).toList();
-
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Erreur fetchShopsAndStands: $e');
-    }
-  }
-
-  // Charger stands depuis Firestore
-  Future<void> loadStands() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('stands')
-          .get();
-      stands = snapshot.docs.map((doc) => doc['name'] as String).toList();
-      notifyListeners();
-    } catch (e) {
-      print("Erreur loadStands: $e");
-    }
   }
   // Soumettre le formulaire de connexion ou d'inscription
   Future<void> submit(BuildContext context) async {
@@ -152,6 +94,7 @@ class AuthController extends ChangeNotifier {
           nickname: nicknameController.text.trim(),
         );
       }
+      collaboratorController.fetchUserData();
 
       if (!context.mounted) return;
       Navigator.of(
