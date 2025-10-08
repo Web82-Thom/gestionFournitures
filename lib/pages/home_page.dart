@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/collaborators_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
@@ -18,6 +19,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  AuthController authController = AuthController();
+  Future<void> get auth async => await authController.fetchUserData();
   String nickname = '';
   String role = '';
 
@@ -25,6 +28,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadNickname();
+    authController.fetchUserData();
   }
 
   Future<void> _loadNickname() async {
@@ -88,8 +92,9 @@ class _HomePageState extends State<HomePage> {
     final bool isAdminOrManager = [
       'Administrateur',
       'Directeur Général',
-      'Directeur de boutique',
-      'Chef de boutique',
+      'Directeur de Boutique',
+      'Chef de Boutique',
+      'Chef de Stand',
     ].contains(role);
 
     return Scaffold(
@@ -112,17 +117,56 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        children: [
-          if (isAdminOrManager) ... [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final data = await authController.fetchUserData();
+          if (data != null && mounted) {
+            setState(() {
+              nickname = data['nickname'] ?? nickname;
+              role = data['role'] ?? role;
+            });
+          }
+        },
+        child: GridView.count(
+          crossAxisCount: 2,
+          children: [
+            if (isAdminOrManager) ...[
+              Card(
+                margin: EdgeInsets.all(20),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => TurnoversPage()),
+                    );
+                  },
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.monetization_on_outlined,
+                          size: 70,
+                          color: Colors.deepPurple,
+                        ),
+                        Text(
+                          'Chiffres d\'affaires',
+                          style: TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             Card(
               margin: EdgeInsets.all(20),
               child: InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TurnoversPage()),
+                    MaterialPageRoute(builder: (context) => StandsPage()),
                   );
                 },
                 child: Center(
@@ -130,12 +174,12 @@ class _HomePageState extends State<HomePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.monetization_on_outlined,
+                        Icons.storefront_outlined,
                         size: 70,
                         color: Colors.deepPurple,
                       ),
                       Text(
-                        'Chiffres d\'affaires',
+                        'Stock des stands',
                         style: TextStyle(fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
@@ -144,97 +188,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-          ],
-          Card(
-            margin: EdgeInsets.all(20),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => StandsPage()),
-                );
-              },
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.storefront_outlined,
-                      size: 70,
-                      color: Colors.deepPurple,
-                    ),
-                    Text(
-                      'Stock des stands',
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Card(
-            margin: EdgeInsets.all(20),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ShopsListPage()),
-                );
-              },
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.store_mall_directory_rounded,
-                      size: 70,
-                      color: Colors.deepPurple,
-                    ),
-                    Text(
-                      'Stock des boutiques',
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Card(
-            margin: EdgeInsets.all(20),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => HistoriesPage()),
-                );
-              },
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.history_edu_sharp,
-                      size: 70,
-                      color: Colors.deepPurple,
-                    ),
-                    Text('Historiques', style: TextStyle(fontSize: 16)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (isAdminOrManager) ...[
             Card(
               margin: EdgeInsets.all(20),
               child: InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => CollaboratorsPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => ShopsListPage()),
                   );
                 },
                 child: Center(
@@ -242,13 +202,13 @@ class _HomePageState extends State<HomePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.admin_panel_settings,
+                        Icons.store_mall_directory_rounded,
                         size: 70,
                         color: Colors.deepPurple,
                       ),
                       Text(
-                        'Collaborateurs',
-                        style: TextStyle(fontSize: 12),
+                        'Stock des boutiques',
+                        style: TextStyle(fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -256,8 +216,64 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            Card(
+              margin: EdgeInsets.all(20),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HistoriesPage()),
+                  );
+                },
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.history_edu_sharp,
+                        size: 70,
+                        color: Colors.deepPurple,
+                      ),
+                      Text('Historiques', style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (isAdminOrManager) ...[
+              Card(
+                margin: EdgeInsets.all(20),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CollaboratorsPage(),
+                      ),
+                    );
+                  },
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.admin_panel_settings,
+                          size: 70,
+                          color: Colors.deepPurple,
+                        ),
+                        Text(
+                          'Collaborateurs',
+                          style: TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

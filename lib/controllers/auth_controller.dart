@@ -25,9 +25,9 @@ class AuthController extends ChangeNotifier {
   String? selectedRole;
   List<String> selectedShops = [];
   List<String> selectedStands = [];
-
+  Map<String, dynamic> user = {};
   List<String> roles = [
-    'Administateur',
+    'Administrateur',
     'Directeur Général',
     'Directeur de Boutique',
     'Chef de Boutique',
@@ -39,6 +39,31 @@ class AuthController extends ChangeNotifier {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService authService = AuthService();
+  
+  /// Récupère les données de l'utilisateur courant depuis Firestore
+  Future<Map<String, dynamic>?> fetchUserData() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data()!;
+      nickname = data['nickname'] ?? 'Utilisateur';
+      role = data['role'] ?? '';
+      notifyListeners(); // 🔁 utile si tu utilises Provider
+      return data;
+    }
+  } catch (e) {
+    debugPrint('Erreur fetchUserData: $e');
+  }
+  return null;
+}
+
 
   /// Récupère la liste des boutiques et des stands depuis Firestore
   Future<void> fetchShopsAndStands() async {
