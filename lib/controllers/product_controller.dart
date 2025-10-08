@@ -7,10 +7,10 @@ class ProductController extends ChangeNotifier {
   final HistoryController historyController = HistoryController();
 
   /// Collections Firestore
-  final CollectionReference stockRefShop =
-      FirebaseFirestore.instance.collection('boutiques');
-  final CollectionReference stockRefStands =
-      FirebaseFirestore.instance.collection('stands');
+  final CollectionReference stockRefShop = FirebaseFirestore.instance
+      .collection('boutiques');
+  final CollectionReference stockRefStands = FirebaseFirestore.instance
+      .collection('stands');
 
   List<ShopStandModel> listStock = [];
   late final BuildContext context;
@@ -44,11 +44,9 @@ class ProductController extends ChangeNotifier {
           ),
           ElevatedButton(
             onPressed: () async {
-              await getStockRef(isStand)
-                  .doc(shopId)
-                  .collection('stock')
-                  .doc(productId)
-                  .delete();
+              await getStockRef(
+                isStand,
+              ).doc(shopId).collection('stock').doc(productId).delete();
 
               await historyController.addHistory(
                 action: 'suppression',
@@ -82,20 +80,21 @@ class ProductController extends ChangeNotifier {
     bool isStand = false,
   }) async {
     int parsedValue = int.tryParse(value) ?? 0;
-    final docRef = getStockRef(isStand)
-        .doc(shopId)
-        .collection('stock')
-        .doc(productId);
+    final docRef = getStockRef(
+      isStand,
+    ).doc(shopId).collection('stock').doc(productId);
 
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
       if (!snapshot.exists) return;
 
       final data = snapshot.data() as Map<String, dynamic>;
-      final quantite =
-          key == 'quantite' ? parsedValue : (data['quantite'] ?? 0);
-      final consommer =
-          key == 'consommer' ? parsedValue : (data['consommer'] ?? 0);
+      final quantite = key == 'quantite'
+          ? parsedValue
+          : (data['quantite'] ?? 0);
+      final consommer = key == 'consommer'
+          ? parsedValue
+          : (data['consommer'] ?? 0);
       final reste = quantite - consommer;
       final commande = reste < 10 ? "⚠️" : "✅";
 
@@ -117,53 +116,51 @@ class ProductController extends ChangeNotifier {
   }
 
   /// Modifier le nom du produit
-  void modifierNomProduit(
-  BuildContext context, // 🔹 on passe le context ici
-  int index,
-  String shopId,
-  String shopName, {
-  bool isStand = false,
-}) {
-  final controller = TextEditingController(text: listStock[index].product);
+  Future <void> updateNameProduct(
+    BuildContext context,
+    int index,
+    String shopId,
+    String shopName, {
+    bool isStand = false,
+  }) async {
+    final controller = TextEditingController(text: listStock[index].product);
 
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text("Modifier le produit"),
-      content: TextField(
-        controller: controller,
-        decoration: const InputDecoration(labelText: "Nom du produit"),
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Modifier le produit"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: "Nom du produit"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                await getStockRef(isStand) // 🔹 true si stand
+                    .doc(shopId)
+                    .collection('stock')
+                    .doc(listStock[index].id)
+                    .update({'product': newName});
+
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Produit modifié ✅")),
+                );
+              }
+            },
+            child: const Text("Modifier"),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Annuler"),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            final newName = controller.text.trim();
-            if (newName.isNotEmpty) {
-              await getStockRef(isStand) // 🔹 true si stand
-                  .doc(shopId)
-                  .collection('stock')
-                  .doc(listStock[index].id)
-                  .update({'product': newName});
-
-              if (!context.mounted) return;
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Produit modifié ✅")),
-              );
-            }
-          },
-          child: const Text("Modifier"),
-        ),
-      ],
-    ),
-  );
-}
-
-
+    );
+  }
   /// Ajouter un produit
   void addProductDialog(
     BuildContext context,
@@ -175,74 +172,129 @@ class ProductController extends ChangeNotifier {
     final quantiteController = TextEditingController();
     final consommerController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Ajouter un produit"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Nom du produit"),
-            ),
-            TextField(
-              controller: quantiteController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Quantité"),
-            ),
-            TextField(
-              controller: consommerController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Consommé"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final quantite = int.tryParse(quantiteController.text) ?? 0;
-              final consommer = int.tryParse(consommerController.text) ?? 0;
-
-              if (name.isNotEmpty) {
-                final newProduct = ShopStandModel(
-                  id: '',
-                  product: name,
-                  quantite: quantite,
-                  consommer: consommer,
-                  reste: quantite - consommer,
-                  commande: (quantite - consommer) < 10 ? "⚠️" : "✅",
-                );
-
-                await getStockRef(isStand)
-                    .doc(shopId)
-                    .collection('stock')
-                    .add(newProduct.toMap());
-
-                await historyController.addHistory(
-                  action: 'création',
-                  product: name,
-                  quantite: quantite,
-                  reste: quantite - consommer,
-                  shopName: shopName,
-                );
-
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Produit ajouté ✅")),
-                );
-              }
-            },
-            child: const Text("Ajouter"),
-          ),
-        ],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (context) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.6, // taille par défaut (60% de l’écran)
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return SingleChildScrollView(
+                  controller: scrollController,
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 20,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Ajouter un produit",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Nom du produit",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: quantiteController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Quantité",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: consommerController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Consommé",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Annuler"),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final name = nameController.text.trim();
+                              final quantite =
+                                  int.tryParse(quantiteController.text) ?? 0;
+                              final consommer =
+                                  int.tryParse(consommerController.text) ?? 0;
+
+                              if (name.isNotEmpty) {
+                                final newProduct = ShopStandModel(
+                                  id: '',
+                                  product: name,
+                                  quantite: quantite,
+                                  consommer: consommer,
+                                  reste: quantite - consommer,
+                                  commande: (quantite - consommer) < 10
+                                      ? "⚠️"
+                                      : "✅",
+                                );
+
+                                await getStockRef(isStand)
+                                    .doc(shopId)
+                                    .collection('stock')
+                                    .add(newProduct.toMap());
+
+                                await historyController.addHistory(
+                                  action: 'création',
+                                  product: name,
+                                  quantite: quantite,
+                                  reste: quantite - consommer,
+                                  shopName: shopName,
+                                );
+
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Produit ajouté ✅"),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text("Ajouter"),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
