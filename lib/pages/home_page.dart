@@ -8,6 +8,7 @@ import 'package:gestion_fournitures/pages/histories_page.dart';
 import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
 import 'package:gestion_fournitures/pages/shops_list_page.dart';
+import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -15,7 +16,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    final authController = AuthController();
+    AuthController authController = AuthController();
 
     if (currentUser == null) {
       return const Scaffold(
@@ -29,19 +30,17 @@ class HomePage extends StatelessWidget {
           .doc(currentUser.uid)
           .snapshots(),
       builder: (context, snapshot) {
-        // 🕐 Si les données sont encore en chargement
         if (!snapshot.hasData) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // ✅ Si on a les données de l’utilisateur
-        final userData = snapshot.data!.data() as Map<String, dynamic>?;
+        final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+        final nickname = userData['nickname'] ?? 'Utilisateur';
+        final role = userData['role'] ?? '';
 
-        final nickname = userData?['nickname'] ?? 'Utilisateur';
-        final role = userData?['role'] ?? '';
-
+        // ✅ Déterminer si l’utilisateur est Admin / Manager
         final bool isAdminOrManager = [
           'Administrateur',
           'Directeur Général',
@@ -49,6 +48,37 @@ class HomePage extends StatelessWidget {
           'Chef de Boutique',
           'Chef de Stand',
         ].contains(role);
+
+        // Liste dynamique des cartes
+        final List<Map<String, dynamic>> cards = [
+          if (isAdminOrManager)
+            {
+              'icon': Icons.monetization_on_outlined,
+              'label': 'Chiffres d\'affaires',
+              'page': const TurnoversPage(),
+            },
+          {
+            'icon': Icons.storefront_outlined,
+            'label': 'Stock des stands',
+            'page': StandsListPage(),
+          },
+          {
+            'icon': Icons.store_mall_directory_rounded,
+            'label': 'Stock des boutiques',
+            'page': const ShopsListPage(),
+          },
+          {
+            'icon': Icons.history_edu_sharp,
+            'label': 'Historiques',
+            'page': const HistoriesPage(),
+          },
+          if (isAdminOrManager)
+            {
+              'icon': Icons.admin_panel_settings,
+              'label': 'Collaborateurs',
+              'page': CollaboratorsPage(),
+            },
+        ];
 
         return Scaffold(
           appBar: AppBar(
@@ -72,80 +102,18 @@ class HomePage extends StatelessWidget {
           ),
           body: GridView.count(
             crossAxisCount: 2,
-            children: [
-              if (isAdminOrManager) ...[
-                _buildCard(
-                  context,
-                  icon: Icons.monetization_on_outlined,
-                  label: 'Chiffres d\'affaires',
-                  page: const TurnoversPage(),
-                ),
-              ],
-              _buildCard(
-                context,
-                icon: Icons.storefront_outlined,
-                label: 'Stock des stands',
-                page: const StandsPage(),
-              ),
-              _buildCard(
-                context,
-                icon: Icons.store_mall_directory_rounded,
-                label: 'Stock des boutiques',
-                page: const ShopsListPage(),
-              ),
-              _buildCard(
-                context,
-                icon: Icons.history_edu_sharp,
-                label: 'Historiques',
-                page: const HistoriesPage(),
-              ),
-              if (isAdminOrManager) ...[
-                _buildCard(
-                  context,
-                  icon: Icons.admin_panel_settings,
-                  label: 'Collaborateurs',
-                  page: CollaboratorsPage(),
-                ),
-              ],
-            ],
+            children: cards.map((card) => BuildCardWidget(
+              icon: card['icon'],
+              label: card['label'],
+              page: card['page'],
+              backgroundColor: Colors.orangeAccent,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              padding: const EdgeInsets.all(5),
+            )).toList(),
           ),
         );
       },
     );
   }
-
-  Widget _buildCard(BuildContext context,
-    {required IconData icon, required String label, required Widget page}) {
-  return Card(
-    margin: const EdgeInsets.all(20),
-    child: InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => page),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0), // 👈 ajoute de l’espace interne
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // 👈 centre verticalement
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Icon(icon, size: 50, color: Colors.deepPurple),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis, // 👈 évite débordement texte
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
 }

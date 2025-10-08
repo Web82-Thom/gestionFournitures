@@ -90,7 +90,6 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
-
   /// Supprimer une boutique ou stand avec confirmation
   Future<void> confirmDelete(
     BuildContext context,
@@ -125,7 +124,6 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
-
   /// Récupère la liste des boutiques et des stands depuis Firestore
   Future<void> fetchShopsAndStands() async {
     try {
@@ -146,7 +144,6 @@ class ShopStandController extends ChangeNotifier {
       debugPrint('Erreur fetchShopsAndStands: $e');
     }
   }
-
   // Charger stands depuis Firestore
   Future<void> loadStands() async {
     try {

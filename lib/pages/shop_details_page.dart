@@ -4,17 +4,17 @@ import 'package:gestion_fournitures/controllers/history_controller.dart';
 import 'package:gestion_fournitures/controllers/product_controller.dart';
 import 'package:gestion_fournitures/models/shop_model.dart';
 
-class LaBoutiquePage extends StatefulWidget {
+class ShopDetailsPage extends StatefulWidget {
   final String shopId;
   final String shopName;
 
-  const LaBoutiquePage({super.key, required this.shopId, required this.shopName});
+  const ShopDetailsPage({super.key, required this.shopId, required this.shopName});
 
   @override
-  State<LaBoutiquePage> createState() => ShopDetailsPage();
+  State<ShopDetailsPage> createState() => ShopDetailsPageState();
 }
 
-class ShopDetailsPage extends State<LaBoutiquePage> {
+class ShopDetailsPageState extends State<ShopDetailsPage> {
   final HistoryController historyController = HistoryController();
   final ProductController productController = ProductController();
 
