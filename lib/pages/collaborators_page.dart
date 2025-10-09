@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gestion_fournitures/pages/collaborator_details_page.dart';
 
 class CollaboratorsPage extends StatelessWidget {
   CollaboratorsPage({super.key});
   final userList = FirebaseFirestore.instance.collection('users');
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +25,35 @@ class CollaboratorsPage extends StatelessWidget {
             return const Center(child: Text('Aucun utilisateur trouvé.'));
           }
 
-          final users = snapshot.data!.docs;
+          // 🔹 Séparer currentUser et les autres
+          final allUsers = snapshot.data!.docs;
+          final currentUserDoc = allUsers
+              .where((doc) => doc.id == currentUserId)
+              .cast<DocumentSnapshot>()
+              .toList()
+              .isNotEmpty
+              ? allUsers.firstWhere((doc) => doc.id == currentUserId)
+              : null;
+          final otherUsers = allUsers.where((doc) => doc.id != currentUserId).toList();
+
+          // 🔹 Vérifier si le currentUser est Administrateur
+          List<DocumentSnapshot> usersToShow = List.from(otherUsers);
+          if (currentUserDoc != null) {
+            final data = currentUserDoc.data() as Map<String, dynamic>;
+            if (data['role'] == 'Administrateur') {
+              // Ajouter l'admin en haut de la liste
+              usersToShow.insert(0, currentUserDoc);
+            }
+          }
+
+          if (usersToShow.isEmpty) {
+            return const Center(child: Text('Aucun autre utilisateur trouvé.'));
+          }
 
           return ListView.builder(
-            itemCount: users.length,
+            itemCount: usersToShow.length,
             itemBuilder: (context, index) {
-              final user = users[index];
+              final user = usersToShow[index];
               final data = user.data() as Map<String, dynamic>;
 
               return InkWell(
@@ -36,15 +61,13 @@ class CollaboratorsPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CollaboratorDetailsPage(user: data, docId: user.id),
+                      builder: (_) =>
+                          CollaboratorDetailsPage(user: data, docId: user.id),
                     ),
                   );
                 },
                 child: Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -65,14 +88,10 @@ class CollaboratorsPage extends StatelessWidget {
                         Text('Rôle : ${data['role'] ?? '-'}'),
                         if (data['shopIds'] != null &&
                             (data['shopIds'] as List).isNotEmpty)
-                          Text(
-                            'Boutique : ${(data['shopIds'] as List).join(", ")}',
-                          ),
+                          Text('Boutique : ${(data['shopIds'] as List).join(", ")}'),
                         if (data['standIds'] != null &&
                             (data['standIds'] as List).isNotEmpty)
-                          Text(
-                            'Stand : ${(data['standIds'] as List).join(", ")}',
-                          ),
+                          Text('Stand : ${(data['standIds'] as List).join(", ")}'),
                       ],
                     ),
                   ),

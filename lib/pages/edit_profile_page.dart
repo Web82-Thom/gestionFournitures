@@ -18,6 +18,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   late TextEditingController _nicknameController;
   CollaboratorController collaboratorController = CollaboratorController({}, '');
+  String currentUserRole = '';
 
   @override
   void initState() {
@@ -25,7 +26,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nicknameController = TextEditingController(
       text: widget.user['nickname'] ?? '',
     );
+    _fetchCurrentUserRole();
     if (widget.docId == currentUserId) fetchRequests();
+  }
+
+  Future<void> _fetchCurrentUserRole() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .get();
+
+    if (doc.exists && doc.data() != null) {
+      setState(() {
+        currentUserRole = doc.data()!['role'] ?? '';
+      });
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -33,10 +48,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (newNickname.isEmpty) return;
 
     await FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.docId)
-      .update({'nickname': newNickname});
-    // 🔹 Actualiser le texte de l'AppBar
+        .collection('users')
+        .doc(widget.docId)
+        .update({'nickname': newNickname});
+
     setState(() {
       widget.user['nickname'] = newNickname;
     });
@@ -53,16 +68,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
+  bool get canDeleteProfile {
+    // 🔹 Seuls Admin, DG et Directeur de Boutique peuvent supprimer
+    return currentUserRole == 'Administrateur' ||
+        currentUserRole == 'Directeur Général' ||
+        currentUserRole == 'Directeur de Boutique';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isCurrentUser = widget.docId == currentUserId;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Profil de ${widget.user['nickname']}'),
         actions: [
-          if (isCurrentUser)
+          if (isCurrentUser && canDeleteProfile)
             IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () => collaboratorController.deleteUser(
                 userId: widget.docId,
                 context: context,
@@ -72,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -81,40 +104,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
               child: TextField(
                 controller: _nicknameController,
                 readOnly: !isCurrentUser,
-                decoration: InputDecoration(labelText: 'Surnom'),
+                decoration: const InputDecoration(labelText: 'Surnom'),
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => {if (isCurrentUser) _saveProfile()},
+                onSubmitted: (_) {
+                  if (isCurrentUser) _saveProfile();
+                },
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text('Email: ${widget.user['email'] ?? 'N/A'}'),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text('Rôle: ${widget.user['role'] ?? 'N/A'}'),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'Affiliations:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               'Boutiques: ${(widget.user['shopIds'] as List<dynamic>?)?.join(', ') ?? 'Aucune'}',
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
               'Stands: ${(widget.user['standIds'] as List<dynamic>?)?.join(', ') ?? 'Aucun'}',
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             if (isCurrentUser)
-            ElevatedButton(
-              onPressed: () => {
-                _saveProfile,
-                Navigator.pop(context, true),
-                ScaffoldMessenger.of(context,).showSnackBar(
-                  SnackBar(content: Text('Profil mis à jour')),
-                ),
-              },
-              child: Text('Enregistrer les modifications'),
-            ),
+              ElevatedButton(
+                onPressed: () {
+                  _saveProfile();
+                  Navigator.pop(context, true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Profil mis à jour')),
+                  );
+                },
+                child: const Text('Enregistrer les modifications'),
+              ),
           ],
         ),
       ),

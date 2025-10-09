@@ -6,7 +6,7 @@ import 'package:gestion_fournitures/pages/shop_or_stand_details_page.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 
 class StandsListPage extends StatelessWidget {
-  StandsListPage({super.key});
+  const StandsListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +33,30 @@ class StandsListPage extends StatelessWidget {
         }
 
         final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
-        final role = userData?['role'] ?? '';
+        final String role = userData?['role'] ?? '';
         final bool isAdmin = role == 'Administrateur';
+
+        // Rôles autorisés pour voir le bouton
+        final List<String> allowedRoles = [
+          'Administrateur',
+          'Directeur Général',
+          'Directeur de Boutique',
+          'Chef de Boutique',
+          'Chef de Stand',
+        ];
+
+        final bool canSeeButton = allowedRoles.contains(role);
 
         return Scaffold(
           appBar: AppBar(
             title: const Text("Stands"),
             backgroundColor: Colors.blue,
             actions: [
-              IconButton(
-                onPressed: () => shopStandController.addStandDialog(context),
-                icon: const Icon(Icons.add),
-              ),
+              if (canSeeButton)
+                IconButton(
+                  onPressed: () => shopStandController.addStandDialog(context),
+                  icon: const Icon(Icons.add),
+                ),
             ],
           ),
           body: StreamBuilder<QuerySnapshot>(
@@ -85,13 +97,15 @@ class StandsListPage extends StatelessWidget {
                       backgroundColor: Colors.blue.shade300,
                       fontSize: 14,
                       iconSize: 40,
-                      onLongPress: isAdmin? () async {
-                        await shopStandController.confirmDelete(
-                          context,
-                          standId,
-                          isStand: true,
-                        );
-                      } : null,
+                      onLongPress: isAdmin
+                          ? () async {
+                              await shopStandController.confirmDelete(
+                                context,
+                                standId,
+                                isStand: true,
+                              );
+                            }
+                          : null,
                     );
                   },
                 ),
