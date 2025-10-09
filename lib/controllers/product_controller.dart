@@ -116,7 +116,7 @@ class ProductController extends ChangeNotifier {
   }
 
   /// Modifier le nom du produit
-  Future <void> updateNameProduct(
+  Future<void> updateNameProduct(
     BuildContext context,
     int index,
     String shopId,
@@ -125,42 +125,85 @@ class ProductController extends ChangeNotifier {
   }) async {
     final controller = TextEditingController(text: listStock[index].product);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Modifier le produit"),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: "Nom du produit"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                await getStockRef(isStand) // 🔹 true si stand
-                    .doc(shopId)
-                    .collection('stock')
-                    .doc(listStock[index].id)
-                    .update({'product': newName});
-
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Produit modifié ✅")),
-                );
-              }
-            },
-            child: const Text("Modifier"),
-          ),
-        ],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (context) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.9, // taille par défaut (90% de l’écran)
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return SingleChildScrollView(
+                  controller: scrollController,
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 20,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Modifier le produit",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          labelText: "Nom du produit",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text("Annuler"),
+                      ),
+                      SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final newName = controller.text.trim();
+                          if (newName.isNotEmpty) {
+                            await getStockRef(isStand) // 🔹 true si stand
+                                .doc(shopId)
+                                .collection('stock')
+                                .doc(listStock[index].id)
+                                .update({'product': newName});
+
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Produit modifié ✅"),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text("Modifier"),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
+
   /// Ajouter un produit
   void addProductDialog(
     BuildContext context,
