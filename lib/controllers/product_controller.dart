@@ -124,7 +124,7 @@ class ProductController extends ChangeNotifier {
     bool isStand = false,
   }) async {
     final controller = TextEditingController(text: listStock[index].product);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -136,7 +136,7 @@ class ProductController extends ChangeNotifier {
           builder: (context, constraints) {
             return DraggableScrollableSheet(
               expand: false,
-              initialChildSize: 0.4, // taille par défaut (40% de l’écran)
+              initialChildSize: 0.9, // taille par défaut (90% de l’écran)
               minChildSize: 0.4,
               maxChildSize: 0.9,
               builder: (context, scrollController) {

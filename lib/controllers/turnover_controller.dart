@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 class TurnoverController extends ChangeNotifier {
   /// Références Firestore
-  final CollectionReference turnoverRefShop =
-      FirebaseFirestore.instance.collection('boutiques');
-  final CollectionReference turnoverRefStands =
-      FirebaseFirestore.instance.collection('stands');
+  final CollectionReference turnoverRefShop = FirebaseFirestore.instance
+      .collection('boutiques');
+  final CollectionReference turnoverRefStands = FirebaseFirestore.instance
+      .collection('stands');
 
   /// Récupérer la bonne référence Firestore (Stand ou Boutique)
   CollectionReference getTurnoverRef(bool isStand) {
@@ -40,81 +40,112 @@ class TurnoverController extends ChangeNotifier {
     final recetteController = TextEditingController();
     DateTime? selectedDate;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text("Ajouter un chiffre d'affaire"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      selectedDate == null
-                          ? "Sélectionner une date"
-                          : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('fr'),
-                      );
-                      if (picked != null) {
-                        setState(() => selectedDate = picked);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: recetteController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Recette (€)"),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Annuler"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (selectedDate != null) {
-                  final recette = double.tryParse(recetteController.text) ?? 0;
-
-                  await getTurnoverRef(isStand)
-                      .doc(shopId)
-                      .collection('chiffreAffaire')
-                      .add({
-                    'date':
-                        "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                    'date_ts': selectedDate,
-                    'recette': recette,
-                    'isShop': !isStand,
-                  });
-
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Chiffre d'affaire ajouté ✅")),
-                  );
-                }
-              },
-              child: const Text("Ajouter"),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (context) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.9, // taille par défaut (60% de l’écran)
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return SingleChildScrollView(
+                  controller: scrollController,
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                    left: 16,
+                    right: 16,
+                    top: 20,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                       Row(
+                         children: [
+                           Expanded(
+                             child: Text(
+                               selectedDate == null
+                                   ? "Sélectionner une date"
+                                   : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                             ),
+                           ),
+                           IconButton(
+                             icon: const Icon(Icons.calendar_today),
+                             onPressed: () async {
+                               final picked = await showDatePicker(
+                                 context: context,
+                                 initialDate: DateTime.now(),
+                                 firstDate: DateTime(2020),
+                                 lastDate: DateTime(2100),
+                                 locale: const Locale('fr'),
+                               );
+                               if (picked != null) {
+                                 selectedDate = picked;
+                                 notifyListeners();
+                               }
+                             },
+                           ),
+                         ],
+                       ),
+                       const SizedBox(height: 10),
+                       TextField(
+                         controller: recetteController,
+                         keyboardType: TextInputType.number,
+                         decoration: const InputDecoration(
+                           labelText: "Recette (€)",
+                         ),
+                       ),
+                        const SizedBox(height: 20),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Annuler"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (selectedDate != null) {
+                                final recette =
+                                    double.tryParse(recetteController.text) ??
+                                    0;
+                  
+                                await getTurnoverRef(
+                                  isStand,
+                                ).doc(shopId).collection('chiffreAffaire').add({
+                                  'date':
+                                      "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                                  'date_ts': selectedDate,
+                                  'recette': recette,
+                                  'isShop': !isStand,
+                                });
+                  
+                                if (!context.mounted) return;
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Chiffre d'affaire ajouté ✅",
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text("Ajouter"),
+                          ),
+                        
+                      
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -127,7 +158,9 @@ class TurnoverController extends ChangeNotifier {
     bool isStand = false,
   }) {
     final dateController = TextEditingController(text: data['date'] ?? '');
-    final recetteController = TextEditingController(text: (data['recette'] ?? '').toString());
+    final recetteController = TextEditingController(
+      text: (data['recette'] ?? '').toString(),
+    );
 
     showDialog(
       context: context,
@@ -220,11 +253,9 @@ class TurnoverController extends ChangeNotifier {
     );
 
     if (confirmed == true) {
-      await getTurnoverRef(isStand)
-          .doc(shopId)
-          .collection('chiffreAffaire')
-          .doc(docId)
-          .delete();
+      await getTurnoverRef(
+        isStand,
+      ).doc(shopId).collection('chiffreAffaire').doc(docId).delete();
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
