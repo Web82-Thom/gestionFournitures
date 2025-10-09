@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'package:gestion_fournitures/controllers/auth_controller.dart';
+import 'package:gestion_fournitures/pages/shop_or_stand_details_page.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
-import 'package:gestion_fournitures/pages/shop_details_page.dart';
 
 class ShopsListPage extends StatelessWidget {
   const ShopsListPage({super.key});
@@ -67,9 +67,10 @@ class ShopsListPage extends StatelessWidget {
                 return BuildCardWidget(
                   icon: Icons.store_mall_directory_rounded,
                   label: shopName,
-                  page: ShopDetailsPage(
-                    shopId: shopId,
-                    shopName: shopName,
+                  page: ShopOrStandDetailsPage(
+                    id: shopId,
+                    name: shop['name'],
+                    isShop: true,
                   ),
                   backgroundColor: Colors.blue.shade300,
                   iconColor: Colors.white,

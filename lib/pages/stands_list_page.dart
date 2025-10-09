@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
+import 'package:gestion_fournitures/pages/shop_or_stand_details_page.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
-import 'stand_details_page.dart';
 
 class StandsListPage extends StatelessWidget {
   StandsListPage({super.key});
@@ -77,9 +77,10 @@ class StandsListPage extends StatelessWidget {
                     return BuildCardWidget(
                       icon: Icons.storefront_outlined,
                       label: standName,
-                      page: StandDetailsPage(
-                        standId: standId,
-                        standName: standName,
+                      page: ShopOrStandDetailsPage(
+                        id: standId,
+                        name: stand['name'],
+                        isShop: false,
                       ),
                       backgroundColor: Colors.blue.shade300,
                       fontSize: 14,
