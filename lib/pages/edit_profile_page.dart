@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gestion_fournitures/pages/auth_page.dart';
+import 'package:gestion_fournitures/controllers/collaborator_controller.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -17,6 +17,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   List<DocumentSnapshot> requests = [];
   String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   late TextEditingController _nicknameController;
+  CollaboratorController collaboratorController = CollaboratorController({}, '');
 
   @override
   void initState() {
@@ -32,10 +33,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (newNickname.isEmpty) return;
 
     await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.docId)
-        .update({'nickname': newNickname});
-
+      .collection('users')
+      .doc(widget.docId)
+      .update({'nickname': newNickname});
     // 🔹 Actualiser le texte de l'AppBar
     setState(() {
       widget.user['nickname'] = newNickname;
@@ -53,52 +53,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  Future<void> _deleteProfile() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirmer la suppression'),
-        content: Text(
-          'Voulez-vous vraiment supprimer votre profil ? Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            child: Text('Annuler'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          TextButton(
-            child: Text('Supprimer', style: TextStyle(color: Colors.red)),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        // Supprime le document Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUserId)
-            .delete();
-
-        // Supprime le compte Firebase Auth
-        await FirebaseAuth.instance.currentUser!.delete();
-
-        // Navigue vers la page Auth (connexion)
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => AuthPage()),
-          (route) => false,
-        );
-      } catch (e) {
-        // Gérer l'erreur (ex: re-authentification requise)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la suppression : $e')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isCurrentUser = widget.docId == currentUserId;
@@ -109,7 +63,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           if (isCurrentUser)
             IconButton(
               icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: _deleteProfile,
+              onPressed: () => collaboratorController.deleteUser(
+                userId: widget.docId,
+                context: context,
+              ),
               tooltip: 'Supprimer mon profil',
             ),
         ],
@@ -139,18 +96,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
-            Text('Boutiques: ${(widget.user['shopIds'] as List<dynamic>?)?.join(', ') ?? 'Aucune'}'),
+            Text(
+              'Boutiques: ${(widget.user['shopIds'] as List<dynamic>?)?.join(', ') ?? 'Aucune'}',
+            ),
             SizedBox(height: 20),
-            Text('Stands: ${(widget.user['standIds'] as List<dynamic>?)?.join(', ') ?? 'Aucun'}'),
+            Text(
+              'Stands: ${(widget.user['standIds'] as List<dynamic>?)?.join(', ') ?? 'Aucun'}',
+            ),
             SizedBox(height: 20),
-            if (isCurrentUser) 
+            if (isCurrentUser)
             ElevatedButton(
               onPressed: () => {
                 _saveProfile,
                 Navigator.pop(context, true),
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context,).showSnackBar(
                   SnackBar(content: Text('Profil mis à jour')),
-                  
                 ),
               },
               child: Text('Enregistrer les modifications'),

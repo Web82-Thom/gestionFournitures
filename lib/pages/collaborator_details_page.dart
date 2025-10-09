@@ -13,11 +13,6 @@ class CollaboratorDetailsPage extends StatefulWidget {
 }
 
 class _CollaboratorDetailsPageState extends State<CollaboratorDetailsPage> {
-  // late CollaboratorController collaboratorController = CollaboratorController(
-  //   widget.user,
-  //   widget.docId,
-  // );
-
   @override
   void initState() {
     super.initState();
@@ -60,19 +55,21 @@ class _CollaboratorDetailsPageState extends State<CollaboratorDetailsPage> {
           ],
         ),
       ),
+      // Button direction pour modifier collaborateur
       floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.edit),
         onPressed: () async {
-          final deleted = await Navigator.push(context, MaterialPageRoute(
-              builder: (context) => EditCollaboratorPage(user: widget.user, docId: widget.docId)
+          final deleted = await Navigator.push(context, MaterialPageRoute( 
+              builder: (context) => EditCollaboratorPage(user: widget.user, docId: widget.docId),
             ),
           );
-
           if (deleted == true) {
-            Navigator.pop( context,true,
-            ); // retourne directement à la liste des users
+            Navigator.pop(
+              context,
+              true,
+            );
           }
         },
-        child: Icon(Icons.edit),
       ),
     );
   }

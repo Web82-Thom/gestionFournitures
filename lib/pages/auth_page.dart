@@ -54,9 +54,7 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                
-
-                const SizedBox(height: 16),
+                // Champ mot de passe
                 TextFormField(
                   controller: authController.passwordController,
                   obscureText: authController.obscureText,
@@ -78,6 +76,7 @@ class _AuthPageState extends State<AuthPage> {
                       value!.length >= 6 ? null : 'Minimum 6 caractères',
                 ),
                 const SizedBox(height: 20),
+                // Boutons de soumission et de changement de mode
                 ElevatedButton(
                   onPressed: () => authController.submit(context),
                   child: Text(
@@ -89,6 +88,7 @@ class _AuthPageState extends State<AuthPage> {
                     onPressed: () => authController.resetPassword(context),
                     child: const Text('Mot de passe oublié ?'),
                   ),
+                const SizedBox(height: 10),
                 TextButton(
                   onPressed: () => setState(
                     () => authController.isLogin = !authController.isLogin,

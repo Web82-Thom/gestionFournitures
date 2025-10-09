@@ -22,7 +22,6 @@ class ProductController extends ChangeNotifier {
   CollectionReference getStockRef(bool isStand) {
     return isStand ? stockRefStands : stockRefShop;
   }
-
   /// Supprimer un produit avec confirmation
   Future<void> confirmDelete(
     BuildContext context,
@@ -68,7 +67,6 @@ class ProductController extends ChangeNotifier {
       ),
     );
   }
-
   /// Modifier Qté ou Conso
   Future<void> updateCell(
     BuildContext context,
@@ -114,7 +112,6 @@ class ProductController extends ChangeNotifier {
       );
     });
   }
-
   /// Modifier le nom du produit
   Future<void> updateNameProduct(
     BuildContext context,
@@ -203,8 +200,7 @@ class ProductController extends ChangeNotifier {
       },
     );
   }
-
-  /// Ajouter un produit
+  /// Ajouter un produit et un historique
   void addProductDialog(
     BuildContext context,
     String shopId,

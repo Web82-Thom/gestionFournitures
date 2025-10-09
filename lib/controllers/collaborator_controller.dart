@@ -14,9 +14,10 @@ class CollaboratorController extends ChangeNotifier{
   CollaboratorController(this.user, this.docId);
   String nickname = '';
   String role = '';
-
   String nicknameLoad = '';
   String roleLoad = '';
+  
+  /// Charge le nickname depuis Firestore
   Future<void> loadNickname() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -36,27 +37,27 @@ class CollaboratorController extends ChangeNotifier{
   }
   /// Récupère les données de l'utilisateur courant depuis Firestore
   Future<Map<String, dynamic>?> fetchUserData() async {
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data()!;
-      nickname = data['nickname'] ?? 'Utilisateur';
-      role = data['role'] ?? '';
-      notifyListeners(); // 🔁 utile si tu utilises Provider
-      return data;
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        nickname = data['nickname'] ?? 'Utilisateur';
+        role = data['role'] ?? '';
+        notifyListeners(); // 🔁 utile si tu utilises Provider
+        return data;
+      }
+    } catch (e) {
+      debugPrint('Erreur fetchUserData: $e');
     }
-  } catch (e) {
-    debugPrint('Erreur fetchUserData: $e');
+    return null;
   }
-  return null;
-}
   
   Future<void> openEditPage(BuildContext context) async {
     final result = await Navigator.push(
@@ -122,53 +123,51 @@ class CollaboratorController extends ChangeNotifier{
   }
 
   Future<void> deleteUser({
-  required String userId, // UID du user à supprimer
-  required BuildContext context,
-}) async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Confirmer la suppression'),
-      content: const Text(
-          'Voulez-vous vraiment supprimer ce profil ? Cette action est irréversible.'),
-      actions: [
-        TextButton(
-          child: const Text('Annuler'),
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        TextButton(
-          child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
-
-  try {
-    // 1️⃣ Supprimer le document Firestore
-    await FirebaseFirestore.instance.collection('users').doc(userId).delete();
-
-    // 2️⃣ Supprimer l’utilisateur Auth seulement si c’est le compte courant
-    if (FirebaseAuth.instance.currentUser?.uid == userId) {
-      await FirebaseAuth.instance.currentUser!.delete();
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const AuthPage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Utilisateur supprimé avec succès ✅')),
-      );
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => CollaboratorsPage()),
-      ); // retour à la liste des utilisateurs
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erreur lors de la suppression : $e')),
+    required String userId, // UID du user à supprimer
+    required BuildContext context,
+  }) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: const Text(
+            'Voulez-vous vraiment supprimer ce profil ? Cette action est irréversible.'),
+        actions: [
+          TextButton(
+            child: const Text('Annuler'),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          TextButton(
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
     );
-  }
-}
 
+    if (confirm != true) return;
+
+    try {
+      // 1️⃣ Supprimer le document Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
+      // 2️⃣ Supprimer l’utilisateur Auth seulement si c’est le compte courant
+      if (FirebaseAuth.instance.currentUser?.uid == userId) {
+        await FirebaseAuth.instance.currentUser!.delete();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Utilisateur supprimé avec succès ✅')),
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => CollaboratorsPage()),
+        ); // retour à la liste des utilisateurs
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la suppression : $e')),
+      );
+    }
+  }
 }

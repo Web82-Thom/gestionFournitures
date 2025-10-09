@@ -5,7 +5,6 @@ import 'package:gestion_fournitures/models/historyModel.dart';
 
 class HistoriesPage extends StatelessWidget {
   const HistoriesPage({super.key});
-  
 
   @override
   Widget build(BuildContext context) {

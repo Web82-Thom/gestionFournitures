@@ -9,10 +9,8 @@ class TurnoversPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference standsCollection =
-        FirebaseFirestore.instance.collection('stands');
-    final CollectionReference boutiquesCollection =
-        FirebaseFirestore.instance.collection('boutiques');
+    final CollectionReference standsCollection =FirebaseFirestore.instance.collection('stands');
+    final CollectionReference boutiquesCollection = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(
@@ -32,14 +30,12 @@ class TurnoversPage extends StatelessWidget {
             if (!boutiqueSnapshot.hasData || boutiqueSnapshot.data!.docs.isEmpty) {
               return const Center(child: Text("Aucune boutique disponible"));
             }
-
             // Liste des boutiques
             final boutiques = boutiqueSnapshot.data!.docs
                 .map((doc) => StandModel(
-                      id: doc.id,
-                      name: doc['name'] ?? 'Boutique',
-                    ))
-                .toList();
+                  id: doc.id,
+                  name: doc['name'] ?? 'Boutique',
+                )).toList();
 
             return StreamBuilder<QuerySnapshot>(
               stream: standsCollection.snapshots(),
@@ -51,12 +47,10 @@ class TurnoversPage extends StatelessWidget {
                 if (!standSnapshot.hasData || standSnapshot.data!.docs.isEmpty) {
                   return const Center(child: Text("Aucun stand disponible"));
                 }
-
                 // Liste des stands
                 final stands = standSnapshot.data!.docs
                     .map((doc) => StandModel.fromFirestore(doc))
                     .toList();
-
                 // On combine boutiques et stands
                 final items = [
                   ...boutiques,
@@ -73,7 +67,8 @@ class TurnoversPage extends StatelessWidget {
                   ),
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    final isShop = index < boutiques.length; // 🔹 Les premières sont des boutiques
+                    // Les premières sont des boutiques
+                    final isShop = index < boutiques.length; 
 
                     return BuildCardWidget(
                       icon: isShop ? Icons.store_mall_directory_rounded : Icons.storefront_outlined,

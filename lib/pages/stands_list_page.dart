@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/controllers/shop_stand_controller.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'stand_details_page.dart';
@@ -9,13 +8,11 @@ import 'stand_details_page.dart';
 class StandsListPage extends StatelessWidget {
   StandsListPage({super.key});
 
-  final AuthController authController = AuthController();
-
   @override
   Widget build(BuildContext context) {
     final standsRef = FirebaseFirestore.instance.collection('stands');
-    final ShopStandController shopStandController = ShopStandController();
     final currentUser = FirebaseAuth.instance.currentUser;
+    final ShopStandController shopStandController = ShopStandController();
 
     if (currentUser == null) {
       return const Scaffold(
@@ -93,8 +90,7 @@ class StandsListPage extends StatelessWidget {
                           standId,
                           isStand: true,
                         );
-                      }
-                      : null,
+                      } : null,
                     );
                   },
                 ),

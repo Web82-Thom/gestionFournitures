@@ -12,7 +12,7 @@ class TurnoverController extends ChangeNotifier {
   CollectionReference getTurnoverRef(bool isStand) {
     return isStand ? turnoverRefStands : turnoverRefShop;
   }
-
+  /// Tableau des mois
   String monthName(int month) {
     const months = [
       "Janvier",
@@ -30,7 +30,6 @@ class TurnoverController extends ChangeNotifier {
     ];
     return months[month - 1];
   }
-
   /// 🔹 Ajouter un chiffre d'affaire
   void addTurnoverDialog(
     BuildContext context,
@@ -66,78 +65,74 @@ class TurnoverController extends ChangeNotifier {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                       Row(
-                         children: [
-                           Expanded(
-                             child: Text(
-                               selectedDate == null
-                                   ? "Sélectionner une date"
-                                   : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                             ),
-                           ),
-                           IconButton(
-                             icon: const Icon(Icons.calendar_today),
-                             onPressed: () async {
-                               final picked = await showDatePicker(
-                                 context: context,
-                                 initialDate: DateTime.now(),
-                                 firstDate: DateTime(2020),
-                                 lastDate: DateTime(2100),
-                                 locale: const Locale('fr'),
-                               );
-                               if (picked != null) {
-                                 selectedDate = picked;
-                                 notifyListeners();
-                               }
-                             },
-                           ),
-                         ],
-                       ),
-                       const SizedBox(height: 10),
-                       TextField(
-                         controller: recetteController,
-                         keyboardType: TextInputType.number,
-                         decoration: const InputDecoration(
-                           labelText: "Recette (€)",
-                         ),
-                       ),
-                        const SizedBox(height: 20),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Annuler"),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedDate == null
+                                  ? "Sélectionner une date"
+                                  : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                            ),
                           ),
-                          ElevatedButton(
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today),
                             onPressed: () async {
-                              if (selectedDate != null) {
-                                final recette =
-                                    double.tryParse(recetteController.text) ??
-                                    0;
-                  
-                                await getTurnoverRef(
-                                  isStand,
-                                ).doc(shopId).collection('chiffreAffaire').add({
-                                  'date':
-                                      "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                                  'date_ts': selectedDate,
-                                  'recette': recette,
-                                  'isShop': !isStand,
-                                });
-                  
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Chiffre d'affaire ajouté ✅",
-                                    ),
-                                  ),
-                                );
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2100),
+                                locale: const Locale('fr'),
+                              );
+                              if (picked != null) {
+                                selectedDate = picked;
+                                notifyListeners();
                               }
                             },
-                            child: const Text("Ajouter"),
                           ),
-                        
-                      
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: recetteController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Recette (€)",
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Annuler"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (selectedDate != null) {
+                            final recette = double.tryParse(recetteController.text) ?? 0;
+              
+                            await getTurnoverRef(
+                              isStand,
+                            ).doc(shopId).collection('chiffreAffaire').add({
+                              'date':
+                                  "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                              'date_ts': selectedDate,
+                              'recette': recette,
+                              'isShop': !isStand,
+                            });
+              
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Chiffre d'affaire ajouté ✅",
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text("Ajouter"),
+                      ),
                     ],
                   ),
                 );
@@ -148,7 +143,6 @@ class TurnoverController extends ChangeNotifier {
       },
     );
   }
-
   /// 🔹 Modifier un chiffre d'affaire
   void editTurnoverDialog(
     BuildContext context,

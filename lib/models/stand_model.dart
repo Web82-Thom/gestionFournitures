@@ -21,7 +21,6 @@ class StandModel {
       'name': name,
     };
   }
-
   /// Crée un StandModel à partir d'un DocumentSnapshot Firestore
   factory StandModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;

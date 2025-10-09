@@ -27,7 +27,7 @@ class _ShopDetailsPageState extends State<ShopDetailsPage> {
     for (var c in _consoControllers) c.dispose();
     super.dispose();
   }
-
+  // Met à jour les TextEditingController pour chaque produit
   void _updateControllers() {
     _quantiteControllers = productController.listStock
         .map((p) => TextEditingController(text: p.quantite.toString()))

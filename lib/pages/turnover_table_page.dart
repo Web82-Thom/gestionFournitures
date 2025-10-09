@@ -76,9 +76,9 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
             final data = doc.data() as Map<String, dynamic>;
             final dateStr = data['date'] ?? '';
             final recette = (data['recette'] ?? 0).toDouble();
-
             final parts = dateStr.split('/');
             DateTime? parsedDate;
+
             if (parts.length == 3) {
               final d = int.tryParse(parts[0]);
               final m = int.tryParse(parts[1]);
@@ -95,7 +95,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
               'parsedDate': parsedDate,
             };
           }).toList();
-
           // 🔹 Trier du plus récent au plus ancien
           parsed.sort((a, b) {
             final da = a['parsedDate'] as DateTime?;
@@ -136,7 +135,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                   ],
                 ),
               ),
-
               // 🔹 Tableau
               Expanded(
                 child: ListView.builder(
@@ -148,7 +146,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                     final recette = item['recette'] as double;
                     final parsedDate = item['parsedDate'] as DateTime?;
                     final isEven = index % 2 == 0;
-
                     // --- Ligne normale
                     final row = GestureDetector(
                       onDoubleTap: () => turnoverController.editTurnoverDialog(
@@ -248,7 +245,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                         );
                       }
                     }
-
                     return row;
                   },
                 ),

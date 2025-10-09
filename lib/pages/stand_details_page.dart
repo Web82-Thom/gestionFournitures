@@ -7,11 +7,7 @@ class StandDetailsPage extends StatefulWidget {
   final String standId;
   final String standName;
 
-  const StandDetailsPage({
-    super.key,
-    required this.standId,
-    required this.standName,
-  });
+  const StandDetailsPage({super.key, required this.standId, required this.standName, });
 
   @override
   State<StandDetailsPage> createState() => _StandDetailPageState();
