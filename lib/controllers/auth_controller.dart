@@ -20,6 +20,8 @@ class AuthController extends ChangeNotifier {
   final passwordController = TextEditingController();
   late TextEditingController nicknameController = TextEditingController();
   final currentUser = FirebaseAuth.instance.currentUser;
+  /// Récupère l'ID de l'utilisateur courant
+  String get currentUserId => FirebaseAuth.instance.currentUser?.uid ?? '';
 
   String nickname = '';
   String role = '';

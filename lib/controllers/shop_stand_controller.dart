@@ -8,9 +8,7 @@ class ShopStandController extends ChangeNotifier {
   List<String> stands = [];
   
   /// Récupérer la bonne référence Firestore
-  CollectionReference getRef(bool isStand) {
-    return isStand ? standsRef : boutiquesRef;
-  }
+  CollectionReference getRef(bool isStand) {return isStand ? standsRef : boutiquesRef;}
   /// 🔹 Ajouter un stand
   void addStandDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -50,7 +48,6 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
-
   /// 🔹 Ajouter une boutique
   void addBoutiqueDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -132,7 +129,6 @@ class ShopStandController extends ChangeNotifier {
           .collection('boutiques')
           .get();
       shops = shopSnapshot.docs.map((doc) => doc['name'] as String).toList();
-
       // Récupération des stands
       final standSnapshot = await FirebaseFirestore.instance
           .collection('stands')
@@ -142,18 +138,6 @@ class ShopStandController extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Erreur fetchShopsAndStands: $e');
-    }
-  }
-  // Charger stands depuis Firestore
-  Future<void> loadStands() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('stands')
-          .get();
-      stands = snapshot.docs.map((doc) => doc['name'] as String).toList();
-      notifyListeners();
-    } catch (e) {
-      print("Erreur loadStands: $e");
     }
   }
 }

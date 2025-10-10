@@ -10,11 +10,16 @@ class EditCollaboratorPage extends StatefulWidget {
   final Map<String, dynamic> user;
   final String docId;
 
-  const EditCollaboratorPage({super.key, required this.user, required this.docId});
+  const EditCollaboratorPage({
+    super.key,
+    required this.user,
+    required this.docId,
+  });
 
   @override
   State<EditCollaboratorPage> createState() => _EditCollaboratorPageState();
 }
+
 CollaboratorController collaboratorController = CollaboratorController({}, '');
 ShopStandController shopStandController = ShopStandController();
 
@@ -22,8 +27,9 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
   final AuthController authController = AuthController();
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
   bool isLoading = true;
+  String currentUserRole = '';
   CollaboratorsPage userList = CollaboratorsPage();
-  
+
   @override
   void initState() {
     super.initState();
@@ -31,7 +37,21 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
       text: widget.user['nickname'] ?? '',
     );
     fetchRequests();
+    _loadCurrentUser();
     _initData();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    // 🔹 Charger le rôle du user connecté
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .get();
+    if (currentUserDoc.exists && currentUserDoc.data() != null) {
+      setState(() {
+        currentUserRole = currentUserDoc.data()!['role'] ?? '';
+      });
+    }
   }
 
   Future<void> _initData() async {
@@ -44,7 +64,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
       authController.selectedStands = List<String>.from(
         widget.user['standIds'] ?? [],
       );
-      isLoading = false; // ✅ données prêtes
+      isLoading = false;
     });
   }
 
@@ -57,6 +77,30 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
     setState(() {
       collaboratorController.requests = snapshot.exists ? [snapshot] : [];
     });
+  }
+
+  /// 🔹 Retourne la liste des rôles visibles selon le rôle du user connecté
+  List<String> getFilteredRoles() {
+    final allRoles = authController.roles;
+
+    if (currentUserRole == 'Administrateur') {
+      return allRoles;
+    }
+
+    if (currentUserRole == 'Directeur Général') {
+      return allRoles.where((r) => r != 'Administrateur').toList();
+    }
+
+    if (currentUserRole == 'Directeur de Boutique' ||
+        currentUserRole == 'Chef de Boutique' ||
+        currentUserRole == 'Chef de Stand' ||
+        currentUserRole == 'Collaborateur') {
+      return allRoles
+          .where((r) => r != 'Administrateur' && r != 'Directeur Général')
+          .toList();
+    }
+
+    return allRoles; // fallback
   }
 
   @override
@@ -72,9 +116,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
         backgroundColor: Colors.blue,
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            ) // 👈 attente chargement
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -84,12 +126,12 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                     decoration: const InputDecoration(labelText: 'Surnom'),
                   ),
                   const SizedBox(height: 20),
+
+                  // ✅ Liste déroulante des rôles filtrée selon currentUserRole
                   DropdownButtonFormField<String>(
-                    initialValue: (role != null && role.isNotEmpty)
-                        ? role
-                        : null,
+                    initialValue: (role != null && role.isNotEmpty) ? role : null,
                     decoration: const InputDecoration(labelText: 'Rôle'),
-                    items: authController.roles.map((role) {
+                    items: getFilteredRoles().map((role) {
                       return DropdownMenuItem(value: role, child: Text(role));
                     }).toList(),
                     onChanged: (value) {
@@ -118,9 +160,8 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                       }).toList(),
                     ],
                     onChanged: (value) => setState(() {
-                      authController.selectedShops = value != null
-                          ? [value]
-                          : [];
+                      authController.selectedShops =
+                          value != null ? [value] : [];
                     }),
                   ),
 
@@ -143,9 +184,8 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                       }).toList(),
                     ],
                     onChanged: (value) => setState(() {
-                      authController.selectedStands = value != null
-                          ? [value]
-                          : [];
+                      authController.selectedStands =
+                          value != null ? [value] : [];
                     }),
                   ),
 
@@ -161,7 +201,7 @@ class _EditCollaboratorPageState extends State<EditCollaboratorPage> {
                         newStand: authController.selectedStands,
                         context: context,
                       );
-                      // Navigator.pop(context, true); // Retourne true si succès
+                      if (!context.mounted) return;
                     },
                   ),
                 ],

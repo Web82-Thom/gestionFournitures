@@ -10,10 +10,9 @@ class HistoryController extends ChangeNotifier {
     if (_nickname != null) return _nickname!;
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return 'inconnu';
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
+    final userDoc = await FirebaseFirestore.instance.collection('users')
+      .doc(currentUser.uid)
+      .get();
     _nickname = userDoc.exists ? (userDoc['nickname'] ?? currentUser.email ?? 'inconnu') : 'inconnu';
     return _nickname!;
   }
@@ -39,33 +38,33 @@ class HistoryController extends ChangeNotifier {
     });
   }
   /// Supprimer un historique avec confirmation
-    Future<void> deleteHistory(BuildContext context, String historyId) async {
-      final CollectionReference historyRef =FirebaseFirestore.instance.collection('histories');
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Confirmer la suppression"),
-          content: const Text("Voulez-vous vraiment supprimer cet historique ?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Annuler"),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Supprimer"),
-            ),
-          ],
-        ),
-      );
+  Future<void> deleteHistory(BuildContext context, String historyId) async {
+    final CollectionReference historyRef =FirebaseFirestore.instance.collection('histories');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirmer la suppression"),
+        content: const Text("Voulez-vous vraiment supprimer cet historique ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Supprimer"),
+          ),
+        ],
+      ),
+    );
 
-      if (confirmed == true) {
-        await historyRef.doc(historyId).delete();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Historique supprimé ✅")),
-          );
-        }
+    if (confirmed == true) {
+      await historyRef.doc(historyId).delete();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Historique supprimé ✅")),
+        );
       }
     }
+  }
 }

@@ -49,11 +49,6 @@ class UserModel {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel.fromMap(data);
   }
-  //Avec cette méthode, vous pouvez facilement convertir un document Firestore en une instance de UserModel.
-  // final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-  // final user = UserModel.fromFirestore(doc);
-  // print(user.nickname);
-  
   /// ✨ Permet de cloner l'objet en modifiant uniquement certains champs
   UserModel copyWith({
     String? uid,

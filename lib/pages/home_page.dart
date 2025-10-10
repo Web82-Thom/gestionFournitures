@@ -59,12 +59,12 @@ class HomePage extends StatelessWidget {
             },
           {
             'icon': Icons.storefront_outlined,
-            'label': 'Stock des stands',
+            'label': 'Les stands',
             'page': StandsListPage(),
           },
           {
             'icon': Icons.store_mall_directory_rounded,
-            'label': 'Stock des boutiques',
+            'label': 'Les boutiques',
             'page': const ShopsListPage(),
           },
           {
@@ -72,12 +72,11 @@ class HomePage extends StatelessWidget {
             'label': 'Historiques',
             'page': const HistoriesPage(),
           },
-          if (isAdminOrManager)
-            {
-              'icon': Icons.admin_panel_settings,
-              'label': 'Collaborateurs',
-              'page': CollaboratorsPage(),
-            },
+          {
+            'icon': Icons.admin_panel_settings,
+            'label': 'Collaborateurs',
+            'page': CollaboratorsPage(),
+          },
         ];
 
         return Scaffold(
