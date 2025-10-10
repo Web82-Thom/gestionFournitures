@@ -365,8 +365,9 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                               }).toList();
 
                               if (monthData.isNotEmpty) {
-                                for (var d in monthData)
+                                for (var d in monthData) {
                                   monthlyTotal += d['recette'] as double;
+                                }
 
                                 return Column(
                                   children: [
@@ -483,7 +484,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                                     .delete();
                                                 }
 
-                                                if (!mounted) return;
+                                                if (!context.mounted) return;
 
                                                 ScaffoldMessenger.of(
                                                   scaffoldContext,
@@ -512,8 +513,8 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                             // 🔹 On recharge la liste après génération
                                             await _loadPdfFiles();
 
-                                            if (!mounted) return false;
-                                            ScaffoldMessenger.of(scaffoldContext,).showSnackBar(SnackBar(
+                                            if (!context.mounted) return false;
+                                            ScaffoldMessenger.of(context,).showSnackBar(SnackBar(
                                                 content: Text(
                                                   "PDF ${turnoverController.monthName(m)} $y généré ✅",
                                                 ),
