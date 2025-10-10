@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:gestion_fournitures/controllers/pdf_controller.dart';
 import 'package:gestion_fournitures/controllers/turnover_controller.dart';
 import 'package:gestion_fournitures/models/stand_model.dart';
-import 'package:gestion_fournitures/utils/pdf_helper.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'dart:typed_data';
+import 'package:gestion_fournitures/utils/dialog_helper.dart';
+import 'package:gestion_fournitures/widgets/build_card_pdf_widget.dart';
 
 class TurnoverTablePage extends StatefulWidget {
   final StandModel stand;
@@ -28,6 +28,8 @@ final TurnoverController turnoverController = TurnoverController();
 class _TurnoverTablePageState extends State<TurnoverTablePage> {
   String? currentRole;
   final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  PdfController pdfController = PdfController();
+  DialogHelper dialogHelper = DialogHelper();
   List<Reference> pdfFiles = [];
 
   @override
@@ -44,7 +46,19 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
               .collection('chiffreAffaire');
 
     _fetchCurrentUserRole();
-    loadPdfFiles();
+    _loadPdfFiles();
+  }
+
+  Future<void> _loadPdfFiles() async {
+    final files = await turnoverController.loadPdfFiles(
+      isShop: widget.isShop,
+      standId: widget.stand.id,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      pdfFiles = files;
+    });
   }
 
   Future<void> _fetchCurrentUserRole() async {
@@ -70,197 +84,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
 
   bool get canEdit => canAdd;
 
-  Future<void> loadPdfFiles() async {
-    final result = await FirebaseStorage.instance
-        .ref(
-          widget.isShop
-              ? 'boutiques/${widget.stand.id}/rapports'
-              : 'stands/${widget.stand.id}/rapports',
-        )
-        .listAll();
-    if (!mounted) return;
-    setState(() => pdfFiles = result.items);
-  }
-
-  Future<void> generateMonthlyPdf(
-    int month,
-    int year,
-    double total,
-    List<Map<String, dynamic>> data,
-  ) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.Page(
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              "Rapport du mois de ${turnoverController.monthName(month)} $year",
-              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Table.fromTextArray(
-              headers: ["Date", "Recette (€)", "Créé par"],
-              data: data
-                  .map(
-                    (d) => [
-                      d['date'],
-                      d['recette'].toStringAsFixed(2),
-                      d['createdBy'],
-                    ],
-                  )
-                  .toList(),
-            ),
-            pw.Divider(),
-            pw.Text(
-              "Total : $total €",
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    Uint8List bytes = await pdf.save();
-
-    final storageRef = FirebaseStorage.instance.ref().child(
-      "${widget.isShop ? 'boutiques' : 'stands'}/${widget.stand.id}/rapports/${year}_${month}.pdf",
-    );
-
-    await storageRef.putData(bytes);
-    final downloadUrl = await storageRef.getDownloadURL();
-
-    final pdfCollection = widget.isShop
-        ? FirebaseFirestore.instance
-              .collection('boutiques')
-              .doc(widget.stand.id)
-              .collection('pdfReports')
-        : FirebaseFirestore.instance
-              .collection('stands')
-              .doc(widget.stand.id)
-              .collection('pdfReports');
-
-    await pdfCollection.add({
-      'month': month,
-      'year': year,
-      'total': total,
-      'url': downloadUrl,
-      'createdAt': Timestamp.now(),
-    });
-
-    await loadPdfFiles();
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "PDF ${turnoverController.monthName(month)} $year généré ✅",
-        ),
-      ),
-    );
-  }
-
-  Widget buildPdfCard(Reference f, BuildContext scaffoldContext) {
-    return Dismissible(
-      key: ValueKey(f.fullPath),
-      direction: DismissDirection.startToEnd,
-      background: Container(
-        color: canDelete ? Colors.red : Colors.grey,
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          children: const [
-            Icon(Icons.delete, color: Colors.white),
-            SizedBox(width: 8),
-            Text("Supprimer", style: TextStyle(color: Colors.white)),
-          ],
-        ),
-      ),
-      confirmDismiss: (direction) async {
-        if (!canDelete) {
-          ScaffoldMessenger.of(
-            scaffoldContext,
-          ).showSnackBar(const SnackBar(content: Text("Accès refusé 🔒")));
-          return false;
-        }
-
-        final confirm = await showDialog<bool>(
-          context: scaffoldContext,
-          builder: (_) => AlertDialog(
-            title: const Text("Confirmer la suppression"),
-            content: Text("Voulez-vous vraiment supprimer ${f.name} ?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(scaffoldContext, false),
-                child: const Text("Annuler"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(scaffoldContext, true),
-                child: const Text(
-                  "Supprimer",
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (confirm == true) {
-          final url = await f
-              .getDownloadURL(); // 🔹 récupérer URL avant suppression
-          await FirebaseStorage.instance.ref(f.fullPath).delete();
-
-          final pdfCollection = widget.isShop
-              ? FirebaseFirestore.instance
-                    .collection('boutiques')
-                    .doc(widget.stand.id)
-                    .collection('pdfReports')
-              : FirebaseFirestore.instance
-                    .collection('stands')
-                    .doc(widget.stand.id)
-                    .collection('pdfReports');
-
-          final snapshot = await pdfCollection
-              .where('url', isEqualTo: url)
-              .get();
-          for (var doc in snapshot.docs) {
-            await doc.reference.delete();
-          }
-
-          await loadPdfFiles();
-
-          ScaffoldMessenger.of(
-            scaffoldContext,
-          ).showSnackBar(SnackBar(content: Text("${f.name} supprimé ✅")));
-        }
-
-        return false;
-      },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: ListTile(
-          title: Text(f.name),
-          trailing: Wrap(
-            spacing: 10,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.visibility, color: Colors.blue),
-                onPressed: () => PdfHelper.openPdf(f.fullPath),
-                tooltip: "Ouvrir le PDF",
-              ),
-              IconButton(
-                icon: const Icon(Icons.share, color: Colors.green),
-                onPressed: () => PdfHelper.sharePdf(f.fullPath),
-                tooltip: "Partager le PDF",
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -272,14 +95,14 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
         centerTitle: true,
         actions: [
           if (canAdd)
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => turnoverController.addTurnoverDialog(
-                context,
-                widget.stand.id,
-                isStand: !widget.isShop,
-              ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => turnoverController.addTurnoverDialog(
+              context,
+              widget.stand.id,
+              isStand: !widget.isShop,
             ),
+          ),
         ],
       ),
       body: SafeArea(
@@ -299,37 +122,9 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                   );
                 }
 
-                final docs = snapshot.data?.docs ?? [];
-
-                final parsed = docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final dateStr = data['date'] ?? '';
-                  final recette = (data['recette'] ?? 0).toDouble();
-                  final createdBy = data['createdBy'] ?? 'Inconnu';
-                  final parts = dateStr.split('/');
-                  DateTime? parsedDate;
-                  if (parts.length == 3) {
-                    final d = int.tryParse(parts[0]);
-                    final m = int.tryParse(parts[1]);
-                    final y = int.tryParse(parts[2]);
-                    if (d != null && m != null && y != null)
-                      parsedDate = DateTime(y, m, d);
-                  }
-                  return {
-                    'doc': doc,
-                    'date': dateStr,
-                    'recette': recette,
-                    'createdBy': createdBy,
-                    'parsedDate': parsedDate,
-                  };
-                }).toList();
-
-                parsed.sort((a, b) {
-                  final da = a['parsedDate'] as DateTime?;
-                  final db = b['parsedDate'] as DateTime?;
-                  if (da == null || db == null) return 0;
-                  return db.compareTo(da);
-                });
+                final parsed = snapshot.hasData
+                    ? turnoverController.parseTurnoverData(snapshot.data!)
+                    : [];
 
                 if (parsed.isEmpty && pdfFiles.isEmpty) {
                   return const Center(child: Text("Aucune donnée"));
@@ -412,55 +207,55 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                     key: ValueKey(doc.id),
                                     direction: DismissDirection.horizontal,
                                     background: canEdit
-                                        ? Container(
-                                            color: Colors.blue,
-                                            alignment: Alignment.centerLeft,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                            ),
-                                            child: const Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.edit,
+                                      ? Container(
+                                          color: Colors.blue,
+                                          alignment: Alignment.centerLeft,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                          ),
+                                          child: const Row(
+                                            children: [
+                                              Icon(
+                                                Icons.edit,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                "Modifier",
+                                                style: TextStyle(
                                                   color: Colors.white,
                                                 ),
-                                                SizedBox(width: 8),
-                                                Text(
-                                                  "Modifier",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
                                     secondaryBackground: canDelete
-                                        ? Container(
-                                            color: Colors.red,
-                                            alignment: Alignment.centerRight,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                            ),
-                                            child: const Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
-                                                Text(
-                                                  "Supprimer",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                Icon(
-                                                  Icons.delete,
+                                      ? Container(
+                                          color: Colors.red,
+                                          alignment: Alignment.centerRight,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                          ),
+                                          child: const Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                "Supprimer",
+                                                style: TextStyle(
                                                   color: Colors.white,
                                                 ),
-                                              ],
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
+                                              ),
+                                              SizedBox(width: 8),
+                                              Icon(
+                                                Icons.delete,
+                                                color: Colors.white,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
                                     confirmDismiss: (direction) async {
                                       if (direction ==
                                           DismissDirection.startToEnd) {
@@ -483,16 +278,14 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                         }
                                         return false;
                                       }
-                                      if (direction ==
-                                          DismissDirection.endToStart) {
+                                      if (direction ==DismissDirection.endToStart) {
                                         if (canDelete) {
-                                          turnoverController
-                                              .deleteTurnoverDialog(
-                                                context,
-                                                widget.stand.id,
-                                                doc.id,
-                                                isStand: !widget.isShop,
-                                              );
+                                          turnoverController.deleteTurnoverDialog(
+                                            context,
+                                            widget.stand.id,
+                                            doc.id,
+                                            isStand: !widget.isShop,
+                                          );
                                         } else {
                                           ScaffoldMessenger.of(
                                             scaffoldContext,
@@ -508,12 +301,12 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                     },
                                     child: Container(
                                       color: isHovered
-                                          ? Colors.blue.shade100
-                                          : isSelected
-                                          ? Colors.blue.shade200
-                                          : isEven
-                                          ? Colors.blue.shade50
-                                          : Colors.white,
+                                        ? Colors.blue.shade100
+                                        : isSelected
+                                        ? Colors.blue.shade200
+                                        : isEven
+                                        ? Colors.blue.shade50
+                                        : Colors.white,
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 10,
                                         horizontal: 10,
@@ -657,10 +450,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                               actions: [
                                                 TextButton(
                                                   onPressed: () =>
-                                                      Navigator.pop(
-                                                        scaffoldContext,
-                                                        false,
-                                                      ),
+                                                    Navigator.pop(scaffoldContext,false,),
                                                   child: const Text("Annuler"),
                                                 ),
                                                 TextButton(
@@ -682,15 +472,15 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
 
                                           if (confirm == true) {
                                             final idsToDelete = monthData
-                                                .map((d) => d['doc'].id)
-                                                .toList();
+                                              .map((d) => d['doc'].id)
+                                              .toList();
                                             Future.delayed(
                                               Duration.zero,
                                               () async {
                                                 for (var id in idsToDelete) {
                                                   await turnoverRef
-                                                      .doc(id)
-                                                      .delete();
+                                                    .doc(id)
+                                                    .delete();
                                                 }
 
                                                 if (!mounted) return;
@@ -709,12 +499,39 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                                           }
                                         } else if (direction ==
                                             DismissDirection.endToStart) {
-                                          await generateMonthlyPdf(
-                                            m,
-                                            y,
-                                            monthlyTotal,
-                                            monthData,
-                                          );
+                                          try {
+                                            await pdfController
+                                                .generateMonthlyPdf(
+                                                  stand: widget.stand,
+                                                  isShop: widget.isShop,
+                                                  month: m,
+                                                  year: y,
+                                                  total: monthlyTotal,
+                                                  data: monthData.cast<Map<String, dynamic>>(),
+                                                );
+                                            // 🔹 On recharge la liste après génération
+                                            await _loadPdfFiles();
+
+                                            if (!mounted) return false;
+                                            ScaffoldMessenger.of(scaffoldContext,).showSnackBar(SnackBar(
+                                                content: Text(
+                                                  "PDF ${turnoverController.monthName(m)} $y généré ✅",
+                                                ),
+                                              ),
+                                            );
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(
+                                              scaffoldContext,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  "Erreur lors de la génération du PDF : $e",
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                          return false;
                                         }
                                         return false;
                                       },
@@ -768,9 +585,16 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
 
                     // 🔹 PDFs générés
                     if (pdfFiles.isNotEmpty)
-                      ...pdfFiles
-                          .map((f) => buildPdfCard(f, scaffoldContext))
-                          .toList(),
+                      ...pdfFiles.map((f) => BuildCardPdfWidget(
+                        fileRef: f,
+                        parentContext: context,
+                        pdfController: pdfController,
+                        standId: widget.stand.id,
+                        isShop: widget.isShop,
+                        canDelete: canDelete,
+                        reloadList: _loadPdfFiles,
+                      ),
+                    ),
                   ],
                 );
               },
