@@ -208,104 +208,126 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                     final parsedDate = item['parsedDate'] as DateTime?;
                     final cratedBy = item['createdBy'] ?? 'Inconnu';
                     final isEven = index % 2 == 0;
+                    // État de sélection d'une row
+                    bool isSelected = false;
+                    bool isHovered = false;
                     // 🔹 Ligne individuelle
-                    final row = Dismissible(
-                      key: ValueKey(doc.id),
-                      direction: DismissDirection.horizontal,
-                      background: (canEdit)
-                          ? Container(
-                              color: Colors.blue,
-                              alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.edit, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text("Modifier", style: TextStyle(color: Colors.white)),
-                                ],
+                    final row = StatefulBuilder(
+                      builder: (context, setStateRow) {
+                        return MouseRegion(
+                          onEnter: (_) => setStateRow(() => isHovered = true),
+                          onExit: (_) => setStateRow(() => isHovered = false),
+                          child: GestureDetector(
+                            onTap: () {
+                              setStateRow(() => isSelected = !isSelected);
+                            },
+                            child: Dismissible(
+                              key: ValueKey(doc.id),
+                              direction: DismissDirection.horizontal,
+                              background: (canEdit)
+                                  ? Container(
+                                      color: Colors.blue,
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.edit, color: Colors.white),
+                                          SizedBox(width: 8),
+                                          Text("Modifier", style: TextStyle(color: Colors.white)),
+                                        ],
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                              secondaryBackground: (canDelete)
+                                  ? Container(
+                                      color: Colors.red,
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          Text("Supprimer", style: TextStyle(color: Colors.white)),
+                                          SizedBox(width: 8),
+                                          Icon(Icons.delete, color: Colors.white),
+                                        ],
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.startToEnd) {
+                                  // ➡️ Glissement gauche → droite = ÉDITION
+                                  if (canEdit) {
+                                    turnoverController.editTurnoverDialog(
+                                      context,
+                                      widget.stand.id,
+                                      doc.id,
+                                      doc.data() as Map<String, dynamic>,
+                                      isStand: !widget.isShop,
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Accès refusé 🔒")),
+                                    );
+                                  }
+                                  return false; // On ne supprime pas
+                                }
+                            
+                                if (direction == DismissDirection.endToStart) {
+                                  // ⬅️ Glissement droite → gauche = SUPPRESSION
+                                  if (canDelete) {
+                                    turnoverController.deleteTurnoverDialog(
+                                      context,
+                                      widget.stand.id,
+                                      doc.id,
+                                      isStand: !widget.isShop,
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Accès refusé 🔒")),
+                                    );
+                                  }
+                                  return false; // on gère manuellement
+                                }
+                            
+                                return false;
+                              },
+                              child: Container(
+                                color: isHovered
+                              ? Colors.blue.shade100
+                              : isSelected
+                                  ? Colors.blue.shade200
+                                  : isEven
+                                      ? Colors.blue.shade50
+                                      : Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(dateStr, textAlign: TextAlign.center),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        "$recette €",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        cratedBy,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(fontStyle: FontStyle.italic),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )
-                          : const SizedBox.shrink(),
-                      secondaryBackground: (canDelete)
-                          ? Container(
-                              color: Colors.red,
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text("Supprimer", style: TextStyle(color: Colors.white)),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.delete, color: Colors.white),
-                                ],
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          // ➡️ Glissement gauche → droite = ÉDITION
-                          if (canEdit) {
-                            turnoverController.editTurnoverDialog(
-                              context,
-                              widget.stand.id,
-                              doc.id,
-                              doc.data() as Map<String, dynamic>,
-                              isStand: !widget.isShop,
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Accès refusé 🔒")),
-                            );
-                          }
-                          return false; // On ne supprime pas
-                        }
-
-                        if (direction == DismissDirection.endToStart) {
-                          // ⬅️ Glissement droite → gauche = SUPPRESSION
-                          if (canDelete) {
-                            turnoverController.deleteTurnoverDialog(
-                              context,
-                              widget.stand.id,
-                              doc.id,
-                              isStand: !widget.isShop,
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Accès refusé 🔒")),
-                            );
-                          }
-                          return false; // on gère manuellement
-                        }
-
-                        return false;
-                      },
-                      child: Container(
-                        color: isEven ? Colors.blue.shade50 : Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Text(dateStr, textAlign: TextAlign.center),
                             ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                "$recette €",
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                cratedBy,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontStyle: FontStyle.italic),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      }
                     );
 
 
