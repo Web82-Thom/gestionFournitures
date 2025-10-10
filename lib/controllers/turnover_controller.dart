@@ -166,128 +166,153 @@ class TurnoverController extends ChangeNotifier {
   }
   /// 🔹 Modifier un chiffre d'affaire
   void editTurnoverDialog(
-  BuildContext context,
-  String shopId,
-  String docId,
-  Map<String, dynamic> data, {
-  bool isStand = false,
-}) {
-  final dateController = TextEditingController(text: data['date'] ?? '');
-  final recetteController = TextEditingController(
-    text: (data['recette'] ?? '').toString(),
-  );
+    BuildContext context,
+    String shopId,
+    String docId,
+    Map<String, dynamic> data, {bool isStand = false,}
+  ){
+    final recetteController = TextEditingController(text: (data['recette'] ?? '').toString());
+    DateTime selectedDate;
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true, // ✅ important pour éviter overflow avec le clavier
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          return DraggableScrollableSheet(
-          initialChildSize: 0.9, // ✅ taille initiale raisonnable
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(
-                      child: Text(
-                        "Modifier le chiffre d'affaire",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-              
-                    TextField(
-                      controller: dateController,
-                      decoration: const InputDecoration(
-                        labelText: "Date (JJ/MM/AAAA)",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-              
-                    TextField(
-                      controller: recetteController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: "Recette (€)",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-              
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Annuler"),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: () async {
-                            final newDate = dateController.text.trim();
-                            final newRecette = double.tryParse(recetteController.text) ?? 0;
-              
-                            DateTime? dateTs;
-                            final parts = newDate.split('/');
-                            if (parts.length == 3) {
-                              final d = int.tryParse(parts[0]);
-                              final m = int.tryParse(parts[1]);
-                              final y = int.tryParse(parts[2]);
-                              if (d != null && m != null && y != null) {
-                                dateTs = DateTime(y, m, d);
-                              }
-                            }
-              
-                            final updateMap = {
-                              'date': newDate,
-                              'recette': newRecette,
-                              'isShop': !isStand,
-                            };
-                            if (dateTs != null) updateMap['date_ts'] = dateTs;
-              
-                            await getTurnoverRef(isStand)
-                                .doc(shopId)
-                                .collection('chiffreAffaire')
-                                .doc(docId)
-                                .update(updateMap);
-              
-                            if (!context.mounted) return;
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Chiffre d'affaire modifié ✅")),
-                            );
-                          },
-                          child: const Text("Modifier"),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              );
-            }
-          
-        );
-        },
+    try {
+      final parts = (data['date'] ?? '').split('/');
+      selectedDate = DateTime(
+        int.parse(parts[2]),
+        int.parse(parts[1]),
+        int.parse(parts[0]),
       );
-    },
-  );
-}
+    } catch (_) {
+      selectedDate = DateTime.now();
+    }
 
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.8,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                left: 16,
+                right: 16,
+                top: 12,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- Barre de drag grise (style iOS)
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const Center(
+                    child: Text(
+                      "Modifier le chiffre d'affaire",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // --- Sélection de la date
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "Date : ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                            locale: const Locale('fr'),
+                          );
+                          if (picked != null) {
+                            selectedDate = picked;
+                            // ⚠️ Rebuild pour mettre à jour la date affichée
+                            (context as Element).markNeedsBuild();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // --- Champ Recette
+                  TextField(
+                    controller: recetteController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: "Recette (€)"),
+                  ),
+                  const SizedBox(height: 20),
+                  // --- Boutons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Annuler"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final newRecette = double.tryParse(recetteController.text) ?? 0;
+                          final updateMap = {
+                            'date':"${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                            'date_ts': selectedDate,
+                            'recette': newRecette,
+                            'isShop': !isStand,
+                          };
 
+                          await getTurnoverRef(isStand)
+                              .doc(shopId)
+                              .collection('chiffreAffaire')
+                              .doc(docId)
+                              .update(updateMap);
+
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text("Chiffre d'affaire modifié avec succès ✅"),
+                            ),
+                          );
+                        },
+                        child: const Text("Modifier"),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
   /// 🔹 Supprimer un chiffre d'affaire
   void deleteTurnoverDialog(
     BuildContext context,

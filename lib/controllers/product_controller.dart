@@ -148,6 +148,18 @@ class ProductController extends ChangeNotifier {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // --- Barre de drag grise (style iOS)
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 5,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
                       const Text(
                         "Modifier le produit",
                         style: TextStyle(

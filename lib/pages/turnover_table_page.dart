@@ -21,10 +21,11 @@ class TurnoverTablePage extends StatefulWidget {
 late CollectionReference turnoverRef;
 final TurnoverController turnoverController = TurnoverController();
 
+
 class _TurnoverTablePageState extends State<TurnoverTablePage> {
   String? currentRole;
   final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
+  String? createdBy;
   @override
   void initState() {
     super.initState();
@@ -117,7 +118,6 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
 
           // 🔹 On récupère les docs
           final docs = snapshot.data!.docs;
-
           // 🔹 On parse et trie les dates
           final parsed = docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
@@ -206,6 +206,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                     final dateStr = item['date'] as String;
                     final recette = item['recette'] as double;
                     final parsedDate = item['parsedDate'] as DateTime?;
+                    final cratedBy = item['createdBy'] ?? 'Inconnu';
                     final isEven = index % 2 == 0;
                     // 🔹 Ligne individuelle
                     final row = Dismissible(
@@ -280,7 +281,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                       },
                       child: Container(
                         color: isEven ? Colors.blue.shade50 : Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                         child: Row(
                           children: [
                             Expanded(
@@ -297,7 +298,7 @@ class _TurnoverTablePageState extends State<TurnoverTablePage> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                (doc['createdBy'] ?? 'Inconnu'),
+                                cratedBy,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(fontStyle: FontStyle.italic),
                               ),
