@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:gestion_fournitures/models/stand_model.dart';
+import 'package:gestion_fournitures/models/shop_stand_model.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'turnover_table_page.dart';
 
@@ -32,9 +32,16 @@ class TurnoversPage extends StatelessWidget {
             }
             // Liste des boutiques
             final boutiques = boutiqueSnapshot.data!.docs
-                .map((doc) => StandModel(
+                .map((doc) => ShopStandModel(
                   id: doc.id,
                   name: doc['name'] ?? 'Boutique',
+                  // quantite : doc['quantite'] ?? 0,
+                  // consommer: doc['consommer'] ?? 0,
+                  // reste: doc['reste'] ?? 0,
+                  // commande: doc['commande'] ?? 0,
+
+
+
                 )).toList();
 
             return StreamBuilder<QuerySnapshot>(
@@ -49,7 +56,7 @@ class TurnoversPage extends StatelessWidget {
                 }
                 // Liste des stands
                 final stands = standSnapshot.data!.docs
-                    .map((doc) => StandModel.fromFirestore(doc))
+                    .map((doc) => ShopStandModel.fromFirestore(doc))
                     .toList();
                 // On combine boutiques et stands
                 final items = [

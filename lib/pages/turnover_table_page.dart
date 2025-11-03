@@ -4,12 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:gestion_fournitures/controllers/pdf_controller.dart';
 import 'package:gestion_fournitures/controllers/turnover_controller.dart';
-import 'package:gestion_fournitures/models/stand_model.dart';
+import 'package:gestion_fournitures/models/shop_stand_model.dart';
 import 'package:gestion_fournitures/utils/dialog_helper.dart';
 import 'package:gestion_fournitures/widgets/build_card_pdf_widget.dart';
 
 class TurnoverTablePage extends StatefulWidget {
-  final StandModel stand;
+  final ShopStandModel stand;
   final bool isShop;
 
   const TurnoverTablePage({

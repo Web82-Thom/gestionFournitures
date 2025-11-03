@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gestion_fournitures/controllers/product_controller.dart';
-import 'package:gestion_fournitures/models/shop_model.dart';
+import 'package:gestion_fournitures/models/shop_stand_model.dart';
 
 /// Page pour afficher les détails d'une boutique ou d'un stand
 class ShopOrStandDetailsPage extends StatefulWidget {
@@ -163,7 +163,7 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
                   .toList();
 
               productController.listStock.sort(
-                  (a, b) => a.product.toLowerCase().compareTo(b.product.toLowerCase()));
+                  (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
               _syncControllers();
 
@@ -238,12 +238,12 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
                                                 widget.id,
                                                 widget.name,
                                                 p.id,
-                                                p.product,
+                                                p.name,
                                                 isStand: !widget.isShop,
                                               )
                                           : null,
                                       child: Text(
-                                        p.product,
+                                        p.name,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(color: Colors.grey.shade900),
                                       ),
@@ -313,7 +313,7 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
                                 Expanded(flex: 15, child: Center(child: Text(p.reste.toString()))),
 
                                 // Cmd
-                                Expanded(flex: 20, child: Center(child: Text(p.commande))),
+                                Expanded(flex: 20, child: Center(child: Text(p.commande!))),
                               ],
                             ),
                           ),

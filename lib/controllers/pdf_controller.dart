@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:gestion_fournitures/models/shop_stand_model.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:typed_data';
-import '../models/stand_model.dart';
 import 'turnover_controller.dart'; // pour monthName()
 
 class PdfController {
@@ -11,7 +11,7 @@ class PdfController {
 
   /// Générer le PDF mensuel et le sauvegarder sur Firebase
   Future<void> generateMonthlyPdf({
-    required StandModel stand,
+    required ShopStandModel stand,
     required bool isShop,
     required int month,
     required int year,
