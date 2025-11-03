@@ -10,6 +10,7 @@ import 'package:gestion_fournitures/pages/turnovers_page.dart';
 import 'package:gestion_fournitures/pages/shops_list_page.dart';
 import 'package:gestion_fournitures/widgets/animated_cookie_background_mouve.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
+import 'package:gestion_fournitures/widgets/build_section_title_widget.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -93,7 +94,7 @@ class HomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (isAdminOrManager) _buildSectionTitle("📊 Gestion"),
+                    if (isAdminOrManager) BuildSectionTitleWidget(title:"📊 Gestion"),
                     if (isAdminOrManager)
                       GridView.count(
                         shrinkWrap: true,
@@ -121,10 +122,8 @@ class HomePage extends StatelessWidget {
                           ),
                         ],
                       ),
-
-                    const SizedBox(height: 20),
-
-                    _buildSectionTitle("🏬 Les boutiques"),
+                    const Divider(),
+                    BuildSectionTitleWidget(title:"🏬 Les boutiques"),
                     GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -152,9 +151,9 @@ class HomePage extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 20),
+                    const Divider(),
 
-                    _buildSectionTitle("🧁 Les stands"),
+                    BuildSectionTitleWidget(title:"🧁 Les stands"),
                     GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -179,20 +178,6 @@ class HomePage extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.brown,
-        ),
-      ),
     );
   }
 }

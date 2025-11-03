@@ -11,11 +11,11 @@ class ShopOrStandDetailsPage extends StatefulWidget {
   final bool isShop;
 
   const ShopOrStandDetailsPage({
-    Key? key,
+    super.key,
     required this.id,
     required this.name,
     this.isShop = true,
-  }) : super(key: key);
+  });
 
   @override
   State<ShopOrStandDetailsPage> createState() => _ShopOrStandDetailsPageState();

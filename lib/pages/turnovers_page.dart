@@ -1,99 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gestion_fournitures/models/shop_stand_model.dart';
-import 'package:gestion_fournitures/widgets/build_card_widget.dart';
-import 'turnover_table_page.dart';
+import 'package:gestion_fournitures/widgets/build_grid_widget.dart';
+import 'package:gestion_fournitures/widgets/build_section_title_widget.dart';
 
 class TurnoversPage extends StatelessWidget {
   const TurnoversPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final CollectionReference standsCollection =FirebaseFirestore.instance.collection('stands');
-    final CollectionReference boutiquesCollection = FirebaseFirestore.instance.collection('boutiques');
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final standsCollection = FirebaseFirestore.instance.collection('stands');
+    final boutiquesCollection = FirebaseFirestore.instance.collection('boutiques');
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Chiffres d'affaires"),
-        backgroundColor: Colors.green,
+        backgroundColor: colorScheme.primary,
         centerTitle: true,
+        foregroundColor: colorScheme.onPrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: FutureBuilder<QuerySnapshot>(
-          future: boutiquesCollection.get(),
-          builder: (context, boutiqueSnapshot) {
-            if (boutiqueSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colorScheme.surface, colorScheme.surfaceVariant],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: FutureBuilder<QuerySnapshot>(
+            future: boutiquesCollection.get(),
+            builder: (context, boutiqueSnapshot) {
+              if (boutiqueSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (!boutiqueSnapshot.hasData || boutiqueSnapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("Aucune boutique disponible"));
-            }
-            // Liste des boutiques
-            final boutiques = boutiqueSnapshot.data!.docs
-                .map((doc) => ShopStandModel(
+              if (!boutiqueSnapshot.hasData || boutiqueSnapshot.data!.docs.isEmpty) {
+                return const Center(child: Text("Aucune boutique disponible"));
+              }
+
+              final boutiques = boutiqueSnapshot.data!.docs.map((doc) {
+                return ShopStandModel(
                   id: doc.id,
                   name: doc['name'] ?? 'Boutique',
-                  // quantite : doc['quantite'] ?? 0,
-                  // consommer: doc['consommer'] ?? 0,
-                  // reste: doc['reste'] ?? 0,
-                  // commande: doc['commande'] ?? 0,
-
-
-
-                )).toList();
-
-            return StreamBuilder<QuerySnapshot>(
-              stream: standsCollection.snapshots(),
-              builder: (context, standSnapshot) {
-                if (standSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!standSnapshot.hasData || standSnapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("Aucun stand disponible"));
-                }
-                // Liste des stands
-                final stands = standSnapshot.data!.docs
-                    .map((doc) => ShopStandModel.fromFirestore(doc))
-                    .toList();
-                // On combine boutiques et stands
-                final items = [
-                  ...boutiques,
-                  ...stands,
-                ];
-
-                return GridView.builder(
-                  itemCount: items.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1,
-                    crossAxisSpacing: 1,
-                    mainAxisSpacing: 1,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    // Les premières sont des boutiques
-                    final isShop = index < boutiques.length; 
-
-                    return BuildCardWidget(
-                      icon: isShop ? Icons.store_mall_directory_rounded : Icons.storefront_outlined,
-                      label: item.name,
-                      padding: const EdgeInsets.all(5),
-                      page: TurnoverTablePage(
-                        stand: item,
-                        isShop: isShop,
-                      ),
-                      backgroundColor: isShop ? Colors.green.shade200 : Colors.blue.shade200,
-                      iconSize: 50,
-                      fontSize: 14,
-                    );
-                  },
                 );
-              },
-            );
-          },
+              }).toList();
+
+              return StreamBuilder<QuerySnapshot>(
+                stream: standsCollection.snapshots(),
+                builder: (context, standSnapshot) {
+                  if (standSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!standSnapshot.hasData || standSnapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("Aucun stand disponible"));
+                  }
+
+                  final stands = standSnapshot.data!.docs
+                      .map((doc) => ShopStandModel.fromFirestore(doc))
+                      .toList();
+
+                  return SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BuildSectionTitleWidget(title:"🏬 Boutiques"),
+                        BuildGridWidget(
+                          items: boutiques,
+                          isShop: true,
+                          backgroundColor: Colors.green.shade200,
+                        ),
+                        const Divider(),
+                        BuildSectionTitleWidget(title:"🧁 Stands"),
+                        BuildGridWidget(
+                          items: stands,
+                          isShop: false,
+                          backgroundColor: Colors.blue.shade200,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

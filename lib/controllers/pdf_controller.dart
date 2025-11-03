@@ -1,16 +1,22 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/models/shop_stand_model.dart';
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'dart:typed_data';
+// import 'dart:typed_data';
 import 'turnover_controller.dart'; // pour monthName()
 
 class PdfController {
   final TurnoverController turnoverController = TurnoverController();
 
-  /// Générer le PDF mensuel et le sauvegarder sur Firebase
-  Future<void> generateMonthlyPdf({
+  /// Génère un PDF mensuel et l’enregistre localement sur le téléphone
+  Future<void> generateMonthlyPdfLocally({
     required ShopStandModel stand,
     required bool isShop,
     required int month,
@@ -18,144 +24,118 @@ class PdfController {
     required double total,
     required List<Map<String, dynamic>> data,
   }) async {
-    final pdf = pw.Document();
+    try {
+      final pdf = pw.Document();
 
-    pdf.addPage(
-      pw.Page(
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              "Rapport du mois de ${turnoverController.monthName(month)} $year",
-              style: pw.TextStyle(
-                fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
+      final monthName =
+          DateFormat.MMMM('fr_FR').format(DateTime(year, month)).capitalize();
+      final title = "${stand.name} - $monthName $year";
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return [
+              pw.Center(
+                child: pw.Text(
+                  "Chiffre d'affaire - $title",
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Table.fromTextArray(
-              headers: ["Date", "Recette (€)", "Créé par"],
-              data: data.map((d) => [
-                d['date'],
-                d['recette'].toStringAsFixed(2),
-                d['createdBy'],
-              ]).toList(),
-            ),
-            pw.Divider(),
-            pw.Text(
-              "Total : $total €",
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
+              pw.SizedBox(height: 20),
+              pw.Table.fromTextArray(
+                headers: ["Date", "Recette (€)", "Créé par"],
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                ),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.blue),
+                cellAlignment: pw.Alignment.center,
+                data: data.map((item) {
+                  final date = (item['parsedDate'] as DateTime?) ??
+                      DateTime.tryParse(item['date'] ?? '');
+                  final formattedDate = date != null
+                      ? DateFormat('dd/MM/yy').format(date)
+                      : item['date'] ?? '';
+                  return [
+                    formattedDate,
+                    (item['recette'] as double).toStringAsFixed(2),
+                    item['createdBy'] ?? ''
+                  ];
+                }).toList(),
               ),
-            ),
-          ],
+              pw.SizedBox(height: 20),
+              pw.Divider(),
+              pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Text(
+                  "Total : ${total.toStringAsFixed(2)} €",
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+            ];
+          },
         ),
-      ),
-    );
+      );
 
-    Uint8List bytes = await pdf.save();
+      // 📁 Enregistrement dans le dossier Documents/ ou Downloads/
+      final directory = await getDownloadsDirectory() ??
+          await getApplicationDocumentsDirectory();
+      final filePath =
+          "${directory.path}/CA_${stand.name}_${month.toString().padLeft(2, '0')}_$year.pdf";
+      final file = File(filePath);
+      await file.writeAsBytes(await pdf.save());
+      
 
-    final storageRef = FirebaseStorage.instance.ref().child(
-      "${isShop ? 'boutiques' : 'stands'}/${stand.id}/rapports/${year}_${month}.pdf",
-    );
+      // ✅ Ouvre le fichier après génération
+      await OpenFilex.open(file.path);
 
-    await storageRef.putData(bytes);
-    final downloadUrl = await storageRef.getDownloadURL();
+      debugPrint("PDF enregistré dans : $filePath");
+    } catch (e) {
+      debugPrint("Erreur PDF local : $e");
+      rethrow;
+    }
+  }
+  /// 🔹 Liste tous les PDFs enregistrés dans le dossier local
+  Future<List<File>> loadLocalPdfFiles() async {
+    final dir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+    final directory = Directory(dir.path);
 
-    final pdfCollection = isShop
-        ? FirebaseFirestore.instance
-            .collection('boutiques')
-            .doc(stand.id)
-            .collection('pdfReports')
-        : FirebaseFirestore.instance
-            .collection('stands')
-            .doc(stand.id)
-            .collection('pdfReports');
+    if (!directory.existsSync()) return [];
 
-    await pdfCollection.add({
-      'month': month,
-      'year': year,
-      'total': total,
-      'url': downloadUrl,
-      'createdAt': Timestamp.now(),
-    });
+    final pdfs = directory
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.toLowerCase().endsWith(".pdf"))
+        .toList();
+
+    pdfs.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+    return pdfs;
   }
   // Supprime un PDF du stockage et de Firestore
-  Future<void> deletePdfFile({
-    required Reference fileRef,
-    required String standId,
-    required bool isShop,
-    required BuildContext context,
-    required bool canDelete,
-  }) async {
-    if (!canDelete) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Accès refusé 🔒")),
-      );
-      return;
-    }
-
-    // 🔹 Boîte de dialogue de confirmation
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Supprimer le PDF"),
-        content: Text("Voulez-vous vraiment supprimer ${fileRef.name} ?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Annuler"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              "Supprimer",
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      // 🔹 On récupère l’URL du fichier avant suppression
-      final url = await fileRef.getDownloadURL();
-
-      // 🔹 On supprime le fichier du stockage
-      await FirebaseStorage.instance.ref(fileRef.fullPath).delete();
-
-      // 🔹 On cherche la référence du PDF dans Firestore
-      final pdfCollection = isShop
-          ? FirebaseFirestore.instance
-              .collection('boutiques')
-              .doc(standId)
-              .collection('pdfReports')
-          : FirebaseFirestore.instance
-              .collection('stands')
-              .doc(standId)
-              .collection('pdfReports');
-
-      final snapshot = await pdfCollection.where('url', isEqualTo: url).get();
-
-      for (var doc in snapshot.docs) {
-        await doc.reference.delete();
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${fileRef.name} supprimé ✅")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erreur lors de la suppression : $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+  Future<void> deletePdf(File file) async {
+    if (file.existsSync()) {
+      await file.delete();
     }
   }
+
+Future<void> openPdf(File file) async {
+  await OpenFilex.open(file.path);
 }
 
+
+}
+
+extension StringCasing on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
+  }
+}
 
