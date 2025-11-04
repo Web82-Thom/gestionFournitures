@@ -13,6 +13,7 @@ class AuthService {
       throw Exception(e.message);
     }
   }
+  
   // Inscription avec nickname
   Future<UserCredential> signUp({
     required String email,

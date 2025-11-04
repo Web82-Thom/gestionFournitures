@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/controllers/history_controller.dart';
-import 'package:gestion_fournitures/models/shop_model.dart';
+import 'package:gestion_fournitures/models/shop_stand_model.dart';
 
 class ProductController extends ChangeNotifier {
   final HistoryController historyController = HistoryController();
@@ -67,6 +67,7 @@ class ProductController extends ChangeNotifier {
       ),
     );
   }
+  
   /// Modifier Qté ou Conso
   Future<void> updateCell(
     BuildContext context,
@@ -112,6 +113,7 @@ class ProductController extends ChangeNotifier {
       );
     });
   }
+  
   /// Modifier le nom du produit
   Future<void> updateNameProduct(
     BuildContext context,
@@ -120,7 +122,7 @@ class ProductController extends ChangeNotifier {
     String shopName, {
     bool isStand = false,
   }) async {
-    final controller = TextEditingController(text: listStock[index].product);
+    final controller = TextEditingController(text: listStock[index].name);
 
     showModalBottomSheet(
       context: context,
@@ -189,7 +191,7 @@ class ProductController extends ChangeNotifier {
                                 .doc(shopId)
                                 .collection('stock')
                                 .doc(listStock[index].id)
-                                .update({'product': newName});
+                                .update({'name': newName});
 
                             if (!context.mounted) return;
                             Navigator.of(context).pop();
@@ -212,6 +214,7 @@ class ProductController extends ChangeNotifier {
       },
     );
   }
+  
   /// Ajouter un produit et un historique
   void addProductDialog(
     BuildContext context,
@@ -302,7 +305,7 @@ class ProductController extends ChangeNotifier {
                               if (name.isNotEmpty) {
                                 final newProduct = ShopStandModel(
                                   id: '',
-                                  product: name,
+                                  name: name,
                                   quantite: quantite,
                                   consommer: consommer,
                                   reste: quantite - consommer,

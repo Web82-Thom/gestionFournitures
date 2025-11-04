@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 class TurnoverController extends ChangeNotifier {
@@ -108,52 +109,52 @@ class TurnoverController extends ChangeNotifier {
                         onPressed: () => Navigator.pop(context),
                         child: const Text("Annuler"),
                       ),
-                     ElevatedButton(
-                            onPressed: () async {
-                              if (selectedDate != null) {
-                                final recette = double.tryParse(recetteController.text) ?? 0;
-                                String createdBy = "Inconnu";
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (selectedDate != null) {
+                            final recette =
+                                double.tryParse(recetteController.text) ?? 0;
+                            String createdBy = "Inconnu";
 
-                                if (user != null) {
-                                  final userDoc = await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(user!.uid)
-                                      .get();
+                            if (user != null) {
+                              final userDoc = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user!.uid)
+                                  .get();
 
-                                  if (userDoc.exists) {
-                                    createdBy = userDoc.data()?['nickname'] ??
-                                        userDoc.data()?['email'] ??
-                                        'Inconnu';
-                                  } else {
-                                    createdBy = user!.email ?? 'Inconnu';
-                                  }
-                                }
-
-                                await getTurnoverRef(isStand)
-                                    .doc(shopId)
-                                    .collection('chiffreAffaire')
-                                    .add({
-                                  'date':
-                                      "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                                  'date_ts': selectedDate,
-                                  'recette': recette,
-                                  'isShop': !isStand,
-                                  'createdBy': createdBy,
-                                  'createdAt': FieldValue.serverTimestamp(),
-                                });
-
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text("Chiffre d'affaire ajouté ✅"),
-                                  ),
-                                );
+                              if (userDoc.exists) {
+                                createdBy =
+                                    userDoc.data()?['nickname'] ??
+                                    userDoc.data()?['email'] ??
+                                    'Inconnu';
+                              } else {
+                                createdBy = user!.email ?? 'Inconnu';
                               }
-                            },
-                            child: const Text("Ajouter"),
-                          ),
+                            }
+
+                            await getTurnoverRef(
+                              isStand,
+                            ).doc(shopId).collection('chiffreAffaire').add({
+                              'date':
+                                  "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                              'date_ts': selectedDate,
+                              'recette': recette,
+                              'isShop': !isStand,
+                              'createdBy': createdBy,
+                              'createdAt': FieldValue.serverTimestamp(),
+                            });
+
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Chiffre d'affaire ajouté ✅"),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text("Ajouter"),
+                      ),
                     ],
                   ),
                 );
@@ -164,14 +165,18 @@ class TurnoverController extends ChangeNotifier {
       },
     );
   }
+
   /// 🔹 Modifier un chiffre d'affaire
   void editTurnoverDialog(
     BuildContext context,
     String shopId,
     String docId,
-    Map<String, dynamic> data, {bool isStand = false,}
-  ){
-    final recetteController = TextEditingController(text: (data['recette'] ?? '').toString());
+    Map<String, dynamic> data, {
+    bool isStand = false,
+  }) {
+    final recetteController = TextEditingController(
+      text: (data['recette'] ?? '').toString(),
+    );
     DateTime selectedDate;
 
     try {
@@ -278,9 +283,11 @@ class TurnoverController extends ChangeNotifier {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          final newRecette = double.tryParse(recetteController.text) ?? 0;
+                          final newRecette =
+                              double.tryParse(recetteController.text) ?? 0;
                           final updateMap = {
-                            'date':"${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                            'date':
+                                "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
                             'date_ts': selectedDate,
                             'recette': newRecette,
                             'isShop': !isStand,
@@ -296,8 +303,9 @@ class TurnoverController extends ChangeNotifier {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content:
-                                  Text("Chiffre d'affaire modifié avec succès ✅"),
+                              content: Text(
+                                "Chiffre d'affaire modifié avec succès ✅",
+                              ),
                             ),
                           );
                         },
@@ -313,6 +321,7 @@ class TurnoverController extends ChangeNotifier {
       },
     );
   }
+
   /// 🔹 Supprimer un chiffre d'affaire
   void deleteTurnoverDialog(
     BuildContext context,
@@ -348,5 +357,58 @@ class TurnoverController extends ChangeNotifier {
         const SnackBar(content: Text("Chiffre d'affaire supprimé ✅")),
       );
     }
+  }
+  /// 🔹 Charger la liste des PDFs depuis Firebase Storage
+  Future<List<Reference>> loadPdfFiles({
+    required bool isShop,
+    required String standId,
+  }) async {
+    final storagePath = isShop
+        ? 'boutiques/$standId/rapports'
+        : 'stands/$standId/rapports';
+
+    final result = await FirebaseStorage.instance.ref(storagePath).listAll();
+    return result.items;
+  }
+  /// Parse les données Firestore en une liste structurée
+  List<Map<String, dynamic>> parseTurnoverData(QuerySnapshot snapshot) {
+    final docs = snapshot.docs;
+
+    final parsed = docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final dateStr = data['date'] ?? '';
+      final recette = (data['recette'] ?? 0).toDouble();
+      final createdBy = data['createdBy'] ?? 'Inconnu';
+
+      // 🔹 Conversion de la date texte -> DateTime
+      final parts = dateStr.split('/');
+      DateTime? parsedDate;
+      if (parts.length == 3) {
+        final d = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final y = int.tryParse(parts[2]);
+        if (d != null && m != null && y != null) {
+          parsedDate = DateTime(y, m, d);
+        }
+      }
+
+      return {
+        'doc': doc,
+        'date': dateStr,
+        'recette': recette,
+        'createdBy': createdBy,
+        'parsedDate': parsedDate,
+      };
+    }).toList();
+
+    // 🔹 Tri du plus récent au plus ancien
+    parsed.sort((a, b) {
+      final da = a['parsedDate'] as DateTime?;
+      final db = b['parsedDate'] as DateTime?;
+      if (da == null || db == null) return 0;
+      return db.compareTo(da);
+    });
+
+    return parsed;
   }
 }
