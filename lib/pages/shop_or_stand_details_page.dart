@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gestion_fournitures/controllers/product_controller.dart';
 import 'package:gestion_fournitures/models/shop_stand_model.dart';
+import 'package:gestion_fournitures/widgets/build_editable_cell_widget.dart';
 
-/// Page pour afficher les détails d'une boutique ou d'un stand
 class ShopOrStandDetailsPage extends StatefulWidget {
   final String id;
   final String name;
@@ -30,7 +30,7 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
   String role = '';
   bool canEditProducts = false;
   bool isAdmin = false;
-  // Rôles autorisés pour modifier / supprimer / renommer les produits 
+
   final List<String> allowedRoles = [
     'Administrateur',
     'Directeur Général',
@@ -68,69 +68,54 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
 
   @override
   void dispose() {
-    for (final c in _quantiteControllers) c.dispose();
-    for (final c in _consoControllers) c.dispose();
+    for (final c in _quantiteControllers) {
+      c.dispose();
+    }
+    for (final c in _consoControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   void _syncControllers() {
-    // Qté controllers
+    // Quantité
     if (_quantiteControllers.length != productController.listStock.length) {
-      for (final c in _quantiteControllers) c.dispose();
+      for (final c in _quantiteControllers) {
+        c.dispose();
+      }
       _quantiteControllers = productController.listStock
           .map((p) => TextEditingController(text: p.quantite.toString()))
           .toList();
-    } else {
-      for (int i = 0; i < _quantiteControllers.length; i++) {
-        final text = productController.listStock[i].quantite.toString();
-        if (_quantiteControllers[i].text != text) {
-          _quantiteControllers[i].text = text;
-        }
-      }
     }
 
-    // Conso controllers
+    // Consommation
     if (_consoControllers.length != productController.listStock.length) {
       for (final c in _consoControllers) c.dispose();
       _consoControllers = productController.listStock
           .map((p) => TextEditingController(text: p.consommer.toString()))
           .toList();
-    } else {
-      for (int i = 0; i < _consoControllers.length; i++) {
-        final text = productController.listStock[i].consommer.toString();
-        if (_consoControllers[i].text != text) {
-          _consoControllers[i].text = text;
-        }
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final stockCollection = productController
         .getStockRef(!widget.isShop)
         .doc(widget.id)
         .collection('stock');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
       appBar: AppBar(
         title: Text(
-          widget.isShop ? 'Boutique - ${widget.name}' : 'Stand - ${widget.name}',
+          widget.isShop ? "🏬 Boutique - ${widget.name}" : "🧁 Stand - ${widget.name}",
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            onPressed: () => productController.addProductDialog(
-              context,
-              widget.id,
-              widget.name,
-              isStand: !widget.isShop,
-            ),
-            icon: const Icon(Icons.add),
-          ),
-        ],
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         centerTitle: true,
-        backgroundColor: Colors.blue,
+        elevation: 3,
+        shadowColor: Colors.black26,
       ),
       body: SafeArea(
         child: Padding(
@@ -141,179 +126,202 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-
+      
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Center(
                   child: Card(
-                    color: Colors.white,
+                    elevation: 3,
+                    color: Colors.white.withOpacity(0.9),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Text(
-                        'Aucun produit pour ${widget.name}',
-                        style: TextStyle(fontSize: 16, color: Colors.grey.shade800),
+                        "Aucun produit trouvé pour ${widget.name}",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                        ),
                       ),
                     ),
                   ),
                 );
               }
-
-              // Build listStock from Firestore docs
+      
               productController.listStock = snapshot.data!.docs
-                  .map((doc) => ShopStandModel.fromFirestore(doc))
-                  .toList();
-
+              .map((doc) => ShopStandModel.fromFirestore(doc))
+              .toList();
+      
               productController.listStock.sort(
-                  (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-
+                (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+              );
+      
               _syncControllers();
-
+      
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "📦 Stock — ${widget.name}",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade900),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Header row
+      
+                  // 🧱 En-tête
                   Card(
-                    color: Colors.white,
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    elevation: 2,
+                    color: colorScheme.primaryContainer,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                       child: Row(
-                        children: const [
-                          Expanded(flex: 25, child: Center(child: Text('Produit', textAlign: TextAlign.center))),
-                          Expanded(flex: 20, child: Center(child: Text('Qté', textAlign: TextAlign.center))),
-                          Expanded(flex: 20, child: Center(child: Text('Conso', textAlign: TextAlign.center))),
-                          Expanded(flex: 15, child: Center(child: Text('Reste', textAlign: TextAlign.center))),
-                          Expanded(flex: 20, child: Center(child: Text('Cmd', textAlign: TextAlign.center))),
+                        children: [
+                          Expanded(flex: 25, child: Center(child: Text('Produit'))),
+                          Expanded(flex: 20, child: Center(child: Text('Qté'))),
+                          Expanded(flex: 20, child: Center(child: Text('Conso'))),
+                          Expanded(flex: 15, child: Center(child: Text('Reste'))),
+                          Expanded(flex: 20, child: Center(child: Text('Cmd'))),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // Product list
+      
+                  // 📄 Liste des produits
                   Expanded(
                     child: ListView.builder(
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       itemCount: productController.listStock.length,
                       itemBuilder: (context, index) {
                         final p = productController.listStock[index];
                         final qtyController = _quantiteControllers[index];
                         final consoController = _consoControllers[index];
-
-                        return Container(
+                        final isEven = index.isEven;
+      
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
                           margin: const EdgeInsets.symmetric(vertical: 6),
                           decoration: BoxDecoration(
-                            color: index.isEven ? Colors.white : Colors.grey.shade50,
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(6),
+                            color: isEven
+                                ? colorScheme.surface
+                                : colorScheme.surfaceVariant.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 8),
                             child: Row(
                               children: [
-                                // Product name
+                                // 🏷️ Produit
                                 Expanded(
                                   flex: 25,
-                                  child: Center(
-                                    child: GestureDetector(
-                                      onDoubleTap: canEditProducts
-                                          ? () => productController.updateNameProduct(
-                                                context,
-                                                index,
-                                                widget.id,
-                                                widget.name,
-                                                isStand: !widget.isShop,
-                                              )
-                                          : null,
-                                      onLongPress: canEditProducts
-                                          ? () => productController.confirmDelete(
-                                                context,
-                                                widget.id,
-                                                widget.name,
-                                                p.id,
-                                                p.name,
-                                                isStand: !widget.isShop,
-                                              )
-                                          : null,
-                                      child: Text(
-                                        p.name,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.grey.shade900),
+                                  child: GestureDetector(
+                                    onDoubleTap: canEditProducts
+                                    ? () => productController.updateNameProduct(
+                                          context,
+                                          index,
+                                          widget.id,
+                                          widget.name,
+                                          isStand: !widget.isShop,
+                                        )
+                                    : null,
+                                    onLongPress: canEditProducts
+                                    ? () => productController.confirmDelete(
+                                          context,
+                                          widget.id,
+                                          widget.name,
+                                          p.id,
+                                          p.name,
+                                          isStand: !widget.isShop,
+                                        )
+                                    : null,
+                                    child: Text(
+                                      p.name,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ),
                                 ),
-
-                                // Quantity editable
+      
+                                // 📦 Qté
+                                Expanded(
+                                  flex: 20,
+                                  child: BuildEditableCellWidget(
+                                    controller: qtyController,
+                                    onSubmit: (val) => productController.updateCell(
+                                      context,
+                                      widget.id,
+                                      widget.name,
+                                      p.id,
+                                      'quantite',
+                                      val,
+                                      isStand: !widget.isShop,
+                                    ),
+                                  ),
+                                ),
+      
+                                // ⚡ Conso
+                                Expanded(
+                                  flex: 20,
+                                  child: BuildEditableCellWidget(
+                                    controller: consoController,
+                                    onSubmit: (val) => productController.updateCell(
+                                      context,
+                                      widget.id,
+                                      widget.name,
+                                      p.id,
+                                      'consommer',
+                                      val,
+                                      isStand: !widget.isShop,
+                                    ),
+                                  ),
+                                ),
+                                // 📊 Reste
+                                Expanded(
+                                  flex: 15,
+                                  child: Center(
+                                    child: Text(
+                                      p.reste.toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+      
+                                // 🧾 Commande
                                 Expanded(
                                   flex: 20,
                                   child: Center(
-                                    child: SizedBox(
-                                      height: 36,
-                                      child: TextField(
-                                        controller: qtyController,
-                                        keyboardType: TextInputType.number,
-                                        textAlign: TextAlign.center,
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-                                        ),
-                                        onSubmitted: (val) => productController.updateCell(
-                                                  context,
-                                                  widget.id,
-                                                  widget.name,
-                                                  p.id,
-                                                  'quantite',
-                                                  val,
-                                                  isStand: !widget.isShop,
-                                                ),
+                                    child: Text(
+                                      p.commande ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: p.commande == "⚠️"
+                                        ? Colors.red
+                                        : Colors.green,
                                       ),
                                     ),
                                   ),
                                 ),
-
-                                // Conso editable
-                                Expanded(
-                                  flex: 20,
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 36,
-                                      child: TextField(
-                                        controller: consoController,
-                                        keyboardType: TextInputType.number,
-                                        textAlign: TextAlign.center,
-                                        decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-                                        ),
-                                        onSubmitted: (val) => productController.updateCell(
-                                                  context,
-                                                  widget.id,
-                                                  widget.name,
-                                                  p.id,
-                                                  'consommer',
-                                                  val,
-                                                  isStand: !widget.isShop,
-                                                ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                // Reste
-                                Expanded(flex: 15, child: Center(child: Text(p.reste.toString()))),
-
-                                // Cmd
-                                Expanded(flex: 20, child: Center(child: Text(p.commande!))),
                               ],
                             ),
                           ),
@@ -327,6 +335,23 @@ class _ShopOrStandDetailsPageState extends State<ShopOrStandDetailsPage> {
           ),
         ),
       ),
+      floatingActionButton: canEditProducts
+      ? FloatingActionButton.extended(
+          onPressed: () => productController.addProductDialog(
+            context,
+            widget.id,
+            widget.name,
+            isStand: !widget.isShop,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          foregroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+          icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.green),
+          label: const Text(
+            "Ajouter un produit",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        )
+      : null,
     );
   }
 }

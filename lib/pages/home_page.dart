@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:gestion_fournitures/controllers/auth_controller.dart';
 import 'package:gestion_fournitures/pages/auth_page.dart';
 import 'package:gestion_fournitures/pages/collaborators_page.dart';
+import 'package:gestion_fournitures/pages/generic_shop_stand_list_page.dart';
 import 'package:gestion_fournitures/pages/histories_page.dart';
-import 'package:gestion_fournitures/pages/stands_list_page.dart';
 import 'package:gestion_fournitures/pages/turnovers_page.dart';
-import 'package:gestion_fournitures/pages/shops_list_page.dart';
 import 'package:gestion_fournitures/widgets/animated_cookie_background_mouve.dart';
 import 'package:gestion_fournitures/widgets/build_card_widget.dart';
 import 'package:gestion_fournitures/widgets/build_section_title_widget.dart';
@@ -133,7 +132,11 @@ class HomePage extends StatelessWidget {
                         BuildCardWidget(
                           icon: Icons.store_mall_directory_rounded,
                           label: "Voir les boutiques",
-                          page: const ShopsListPage(),
+                          page: GenericShopStandListPage(
+                            title: "Les Boutiques",
+                            collectionName: "boutiques",
+                            isShop: true,
+                          ),
                           backgroundColor: Colors.orangeAccent,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -163,7 +166,11 @@ class HomePage extends StatelessWidget {
                         BuildCardWidget(
                           icon: Icons.storefront_outlined,
                           label: "Voir les stands",
-                          page: StandsListPage(),
+                          page: GenericShopStandListPage(
+                            title: "Les Stands",
+                            collectionName: "stands",
+                            isShop: false,
+                          ),
                           backgroundColor: Colors.orangeAccent,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

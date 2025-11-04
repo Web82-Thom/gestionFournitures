@@ -67,6 +67,7 @@ class ProductController extends ChangeNotifier {
       ),
     );
   }
+  
   /// Modifier Qté ou Conso
   Future<void> updateCell(
     BuildContext context,
@@ -112,6 +113,7 @@ class ProductController extends ChangeNotifier {
       );
     });
   }
+  
   /// Modifier le nom du produit
   Future<void> updateNameProduct(
     BuildContext context,
@@ -189,7 +191,7 @@ class ProductController extends ChangeNotifier {
                                 .doc(shopId)
                                 .collection('stock')
                                 .doc(listStock[index].id)
-                                .update({'product': newName});
+                                .update({'name': newName});
 
                             if (!context.mounted) return;
                             Navigator.of(context).pop();
@@ -212,6 +214,7 @@ class ProductController extends ChangeNotifier {
       },
     );
   }
+  
   /// Ajouter un produit et un historique
   void addProductDialog(
     BuildContext context,

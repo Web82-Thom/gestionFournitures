@@ -9,6 +9,7 @@ class ShopStandController extends ChangeNotifier {
   
   /// Récupérer la bonne référence Firestore
   CollectionReference getRef(bool isStand) {return isStand ? standsRef : boutiquesRef;}
+  
   /// 🔹 Ajouter un stand
   void addStandDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -48,6 +49,7 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
+ 
   /// 🔹 Ajouter une boutique
   void addBoutiqueDialog(BuildContext context) {
     final nameController = TextEditingController();
@@ -87,6 +89,7 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
+  
   /// Supprimer une boutique ou stand avec confirmation
   Future<void> confirmDelete(
     BuildContext context,
@@ -121,6 +124,7 @@ class ShopStandController extends ChangeNotifier {
       ),
     );
   }
+  
   /// Récupère la liste des boutiques et des stands depuis Firestore
   Future<void> fetchShopsAndStands() async {
     try {
